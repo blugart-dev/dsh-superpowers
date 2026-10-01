@@ -42,6 +42,9 @@ From the DSH Desktop **Plugins** page, choose **Install**, then enter:
 github:blugart-dev/dsh-superpowers
 ```
 
+To pin a release instead of tracking `main`, use
+`github:blugart-dev/dsh-superpowers#v0.1.0`.
+
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
 
