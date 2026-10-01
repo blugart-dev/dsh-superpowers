@@ -3,7 +3,7 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
-## Unreleased
+## 1.0.0-rc.2 — 2026-10-01
 
 **Fixed in `dsh-tools.md`** (found by the splitpot field test)
 

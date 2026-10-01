@@ -52,7 +52,7 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v1.0.0-rc.1`.
+`github:blugart-dev/dsh-superpowers#v1.0.0-rc.2`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
