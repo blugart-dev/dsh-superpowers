@@ -174,7 +174,7 @@ You MUST complete each phase before proceeding to the next.
    - Automated test if possible
    - One-off test script if no framework
    - MUST have before fixing
-   - Use the `test-driven-development` skill for writing proper failing tests
+   - Use the `superpowers:test-driven-development` skill for writing proper failing tests
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -186,7 +186,7 @@ You MUST complete each phase before proceeding to the next.
    - Test passes now?
    - No other tests broken?
    - Issue actually resolved?
-   - Use the `verification-before-completion` skill before claiming success
+   - Use the `superpowers:verification-before-completion` skill before claiming success
 
 4. **If Fix Doesn't Work**
    - STOP
@@ -240,27 +240,6 @@ If you catch yourself thinking:
 - "We're stuck?" (frustrated) - Your approach isn't working
 
 **When you see these:** STOP. Return to Phase 1.
-
-## DeepSeek Harness notes
-
-- **A sandbox denial is not a bug symptom.** `[sandbox: file access denied under
-  <mode> mode]` is a **policy** boundary, not evidence of a defect in the code
-  under test. Confirm which you are looking at before treating it as a
-  reproducible failure, and report it as a policy boundary rather than working
-  around it. Applying this skill to a policy denial is investigating the wrong
-  system.
-- **Reproduce with the shell tool the work will be verified with.** On Windows
-  that is `pwsh`, and a bash-only repro can hide Windows path, quoting, and
-  sandbox behaviours. Where this skill shows `bash` for instrumentation (`echo`,
-  `env | grep`, `security list-keychains`), translate to the PowerShell equivalent
-  there rather than pasting POSIX syntax.
-- **Read real exit codes.** The shell tool reports them; a bare `[exit code: 1]` is a
-  failure even when the output looks plausible. Do not infer success from text.
-- **Shell network access may be unavailable** while the `web_fetch` tool still
-  works. If a command fails on a TLS or credential error, that is a transport
-  limitation, not the bug you are chasing.
-- **Focus on the source of the error message.** DSH wraps tool output; strip the
-  wrapper before quoting an error as evidence, and cite the underlying line.
 
 ## Common Rationalizations
 

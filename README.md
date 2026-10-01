@@ -2,6 +2,8 @@
 
 English | [中文](README.zh.md)
 
+[![ci](https://github.com/blugart-dev/dsh-superpowers/actions/workflows/ci.yml/badge.svg)](https://github.com/blugart-dev/dsh-superpowers/actions/workflows/ci.yml) [![compat](https://github.com/blugart-dev/dsh-superpowers/actions/workflows/compat.yml/badge.svg)](https://github.com/blugart-dev/dsh-superpowers/actions/workflows/compat.yml)
+
 [Superpowers](https://github.com/obra/superpowers) for
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 Jesse Vincent's skill library for disciplined agentic development (brainstorming,
@@ -11,7 +13,7 @@ review), packaged as one DSH bundle.
 | | |
 |---|---|
 | Upstream | `obra/superpowers` **v6.4.2**, commit `8ca22dba` ([pin](upstream/pin.json)) |
-| Skills | all 15, with every upstream file under `skills/` (74), each verified by git blob hash |
+| Skills | all 15, with every upstream file under `skills/` (74), each verified by git blob hash. 73 are byte-identical to upstream |
 | Tested on | DeepSeek Harness Desktop `0.2.0-rc.2`, Windows 11 |
 
 ## What you get
@@ -22,19 +24,24 @@ on or off on its own.
 | Row | Default | What it does |
 |---|---|---|
 | `dsh-superpowers-skills` | on | Serves the skills to every session, in every workspace. |
-| `dsh-superpowers-bootstrap` | on | Puts upstream's session-start text, which wraps `using-superpowers`, in every session's system prompt. It replaces upstream's `SessionStart` hook, which DSH does not have. |
+| `dsh-superpowers-bootstrap` | on | Puts upstream's session-start text, which wraps `using-superpowers`, in every session's system prompt, followed by the DSH tool mapping. It replaces upstream's `SessionStart` hook, which DSH does not have. |
 | `dsh-superpowers-gate` | **off** | Optional enforcement. It denies `write`/`edit` to source files until the session has loaded a skill. This row is **not** part of upstream. |
 
-How it differs from upstream:
+How it differs from upstream: hardly at all, on purpose. Upstream's
+[porting guide](https://github.com/obra/superpowers/blob/main/docs/porting-to-a-new-harness.md)
+says to never edit skill bodies to fit a harness, and this port follows it:
 
-- **Skill names.** Skills are named without the `superpowers:` prefix
-  (`test-driven-development`, not `superpowers:test-driven-development`), because
-  DSH resolves skills by bare name.
-- **DSH notes.** Thirteen `SKILL.md` files gain a short "DeepSeek Harness notes"
-  section. It covers DSH's tool names, the one-level subagent limit, and running
-  upstream's bash helper scripts from Windows.
-- **Where changes are recorded.** Every change is a reviewable patch in
-  [`overlays/`](overlays/). Nothing in `skills/` is hand-maintained.
+- **The skills ship verbatim.** The one exception is a single line in
+  `using-superpowers`'s "Platform Adaptation" list, which points to the DSH
+  mapping. That pointer is the only edit the guide allows.
+- **One DSH-only file:**
+  [`using-superpowers/references/dsh-tools.md`](skills/using-superpowers/references/dsh-tools.md).
+  It maps the skills' actions to DSH tools. It explains that `superpowers:<name>`
+  loads as `<name>`, that subagents are limited to one level, and how to run the
+  bash helper scripts on Windows. The bootstrap inlines it, so every session has
+  it.
+- **Every change is a reviewable file** in [`overlays/`](overlays/). Nothing in
+  `skills/` is maintained by hand.
 
 ## Install
 
@@ -45,7 +52,7 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v0.3.0`.
+`github:blugart-dev/dsh-superpowers#v1.0.0-rc.1`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
@@ -154,8 +161,10 @@ npm run eval:harness  # behavioural tests in real headless sessions (spends toke
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to edit a skill, upgrade upstream, and
   add a test.
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the pieces fit, and why.
-- [evals/](evals/): a behavioural scenario for checking that DSH actually works
+- [evals/](evals/): behavioural scenarios for checking that DSH actually works
   the Superpowers way.
+- [docs/RELEASING.md](docs/RELEASING.md): the release checklist.
+- [SECURITY.md](SECURITY.md): what runs where, and how to report a vulnerability.
 
 ## License
 

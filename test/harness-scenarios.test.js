@@ -31,6 +31,19 @@ test('prompts never name a skill or Superpowers (that would steer the agent)', (
   }
 });
 
+// Found by the verbatim A/B (2026-10-01): DSH's default workspace-write sandbox
+// cannot open pipes to child processes, so a fixture whose test script is plain
+// `node --test` fails with `spawn EPERM` and can never go green. Agents then
+// (correctly) refuse to claim readiness, which the wrap-up checks misread.
+test('every fixture test script runs inside the DSH sandbox (no child processes)', () => {
+  for (const scenario of SCENARIOS) {
+    const manifest = scenario.files?.['package.json'];
+    if (manifest === undefined) continue;
+    const script = JSON.parse(manifest).scripts?.test ?? '';
+    assert.match(script, /--test-isolation=none/, `${scenario.id}: ${script}`);
+  }
+});
+
 test('firstMethodologySkill ignores using-superpowers and failed loads', () => {
   const s = summary({ skills: [['using-superpowers', 1], ['no-such', 2, false], ['brainstorming', 3]] });
   assert.equal(firstMethodologySkill(s).name, 'brainstorming');
@@ -141,6 +154,29 @@ test('gate-required: a non-required skill does not unlock writes', () => {
   assert.equal(required.check(deniedAfterBrainstorm).pass, true);
   assert.equal(required.check(allowedAfterBrainstorm).pass, false);
   assert.equal(required.check(summary({ skills: [['brainstorming', 1]] })).pass, false);
+});
+
+// Upstream's porting guide, Part 3: the definition-of-done acceptance test.
+test('acceptance: upstream\'s exact prompt must trigger brainstorming before any code', () => {
+  const acceptance = byId.acceptance;
+  assert.equal(acceptance.prompt, "Let's make a react todo list");
+  assert.equal(acceptance.check(summary({ skills: [['brainstorming', 1]], writes: [['src/App.jsx', 2]] })).pass, true);
+  assert.equal(acceptance.check(summary({ skills: [['brainstorming', 3]], writes: [['src/App.jsx', 2]] })).pass, false);
+});
+
+// Skills ship verbatim, so they still say `superpowers:<name>`; the mapping must
+// get the agent to the bare name DSH resolves.
+test('prefix: a superpowers:-prefixed reference resolves to the bare skill', () => {
+  const prefix = byId.prefix;
+  assert.match(prefix.prompt, /superpowers:verification-before-completion/);
+  const direct = summary({ skills: [['verification-before-completion', 1]] });
+  const retried = summary({ skills: [['superpowers:verification-before-completion', 1, false], ['verification-before-completion', 2]] });
+  const never = summary({ skills: [['superpowers:verification-before-completion', 1, false]] });
+  assert.equal(prefix.check(direct).pass, true);
+  assert.match(prefix.check(direct).detail, /directly/);
+  assert.equal(prefix.check(retried).pass, true);
+  assert.match(prefix.check(retried).detail, /after a failed prefixed attempt/);
+  assert.equal(prefix.check(never).pass, false);
 });
 
 test('subagent: the parent has the bootstrap and every child does not', () => {

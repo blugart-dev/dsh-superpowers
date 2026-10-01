@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { gitBlobSha, stripSkillPrefix } from '../scripts/lib/upstream.mjs';
+import * as upstream from '../scripts/lib/upstream.mjs';
+const { gitBlobSha } = upstream;
 
 test('gitBlobSha matches git hash-object for known inputs', () => {
   // `git hash-object` of an empty file and of "hello\n".
@@ -9,13 +10,6 @@ test('gitBlobSha matches git hash-object for known inputs', () => {
   assert.equal(gitBlobSha(Buffer.from('hello\n')), 'ce013625030ba8dba906f756967f9e9ca394464a');
 });
 
-test('the prefix transformation removes only skill references', () => {
-  assert.equal(
-    stripSkillPrefix('use superpowers:test-driven-development and superpowers:brainstorming'),
-    'use test-driven-development and brainstorming'
-  );
-  // Not a skill reference: no kebab-case name follows the colon.
-  assert.equal(stripSkillPrefix('superpowers: the plugin'), 'superpowers: the plugin');
-  assert.equal(stripSkillPrefix('docs/superpowers/plans'), 'docs/superpowers/plans');
-  assert.equal(stripSkillPrefix('superpowers:Upper'), 'superpowers:Upper');
+test('there is no skill-text transformation: skills ship verbatim', () => {
+  assert.equal(upstream.stripSkillPrefix, undefined);
 });

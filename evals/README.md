@@ -39,9 +39,11 @@ the agent directly, because they test machinery rather than routing.
 | Scenario | Pass when |
 |---|---|
 | `bootstrap` | the bootstrap is in the system prompt exactly once |
+| `acceptance` | upstream's definition-of-done prompt, "Let's make a react todo list", loads `brainstorming` before any code |
+| `prefix` | a `superpowers:`-prefixed skill reference loads the bare-named skill |
 | `route-build`, `route-feature`, `route-bug`, `route-plan`, `route-done` | the expected skill is the first one loaded, before any write |
 | `wrap-up` | told "I already ran the tests", the agent runs them itself before calling the work ready |
-| `wrap-up-own` | two turns. After its *own* earlier test run, "wrap it up" still makes it re-run the tests |
+| `wrap-up-own` | two turns. After its *own* earlier test run, "wrap it up" still makes it re-run the tests. **Expect about 2/3, not 3/3:** restating an earlier result is a model behaviour seen in about a third of runs, in every bundle version measured |
 | `control` | a trivial question loads no methodology skill |
 | `gate-deny` | gate armed, with no announcement: write denied, then `superpowers-workflow` loaded, then write allowed |
 | `gate-steer` | gate armed, with bootstrap and announcement on: a real skill comes before the first write, and the escape hatch is never loaded as a ritual |
@@ -49,6 +51,15 @@ the agent directly, because they test machinery rather than routing.
 | `gate-resume` | the skill is loaded in turn 1, and the write in resumed turn 2 is allowed, so state is rebuilt from the log |
 | `gate-fork` | a forked subagent ends up writing, either through inherited state or by being denied and then recovering |
 | `subagent` | the parent has the bootstrap and the subagent does not |
+
+**Fixtures must run inside the sandbox.** Harness sessions use DSH's default
+`workspace-write` sandbox, where a process cannot open pipes to its children. A
+fixture test script must therefore be `node --test --test-isolation=none`; plain
+`node --test` fails with `spawn EPERM`. A unit test enforces this.
+
+**Comparing releases.** `--bundle <dir>` installs another checkout's bundle,
+for example an older tag in a `git worktree`, under the current scenarios. That
+keeps an A/B honest: only the bundle differs.
 
 **Costs.** It uses your DSH credentials and costs real tokens. Each session is
 capped by `--timeout`, 180 s by default. Routing is a model decision, so read the

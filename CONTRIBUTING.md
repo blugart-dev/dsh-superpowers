@@ -4,19 +4,23 @@
 
 - **`skills/` is generated.** It is built from `upstream/pin.json` and
   `overlays/`. CI fails if the committed tree does not match a fresh build.
-- **Upstream text stays upstream's.** The DSH changes are additive notes, plus a
-  small number of documented line replacements. Do not reword upstream prose to
-  taste.
+- **Never edit skill bodies.** This is upstream's porting rule: skills describe
+  actions, and harness differences go in the tool mapping. The only edits allowed
+  are the "DeepSeek Harness" line in `using-superpowers`'s Platform Adaptation
+  list and the added file `using-superpowers/references/dsh-tools.md`. If a
+  change seems to need a `SKILL.md` edit, the fix belongs in the mapping.
 - **Test first.** Every change to `src/` or `scripts/` starts with a failing test
   in `test/`. Run it and see it fail for the right reason, then implement.
 - **`npm run verify` must pass** before you commit.
 
-## Change a DSH note in a skill
+## Change the DSH tool mapping
 
-1. Edit the file under `skills/`.
-2. Run `npm run overlays`. This regenerates `overlays/` from the edited tree
-   (it uses `git diff`, so it needs git).
-3. Run `npm run verify`.
+1. Edit `skills/using-superpowers/references/dsh-tools.md`. The bootstrap inlines
+   it into every session's system prompt, so keep it short and action-oriented.
+2. Run `npm run overlays`. This records the file in `overlays/added/` (it uses
+   `git diff`, so it needs git).
+3. Run `npm run verify`. Then run the harness scenarios the change could affect,
+   for example `npm run eval:harness -- --only prefix,acceptance --repeat 3`.
 4. Commit `skills/` and `overlays/` together.
 
 ## Upgrade upstream
@@ -27,11 +31,11 @@ for you when obra/superpowers publishes a release. To do it by hand:
 1. Run `node scripts/bump-upstream.mjs --latest`, or pass a tag, branch or commit.
    This rewrites `upstream/pin.json` from GitHub's tree for that commit.
    `--check` only reports whether a newer release exists.
-2. Run `npm run sync`. If an overlay no longer applies, the build fails and names
-   the file and hunk. Re-apply that note by hand in `skills/`, then run
-   `npm run overlays`.
-3. Read upstream's release notes. Check whether any DSH note is now wrong or
-   redundant, for example when upstream adds its own guidance for the same thing.
+2. Run `npm run sync`. The only overlay is the Platform Adaptation pointer. If
+   upstream reworded that list, the build fails and names the hunk. Re-add the
+   line by hand in `skills/`, then run `npm run overlays`.
+3. Read upstream's release notes against `dsh-tools.md`. A new action, a renamed
+   tool or a new helper script may need a line in the mapping.
 4. Refresh `LICENSE.superpowers` if the license changed. `npm run check`
    compares it with the pin.
 5. Record the upstream version under a new `CHANGELOG.md` entry, and run

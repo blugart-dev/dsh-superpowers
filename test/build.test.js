@@ -18,18 +18,18 @@ const upstream = {
 const read = async (path) => Buffer.from(upstream[path]);
 
 const patch = [
-  '--- a/x', '+++ b/x', '@@ -1,2 +1,3 @@', ' use b first', ' line two', '+DSH note', ''
+  '--- a/x', '+++ b/x', '@@ -1,2 +1,3 @@', ' use superpowers:b first', ' line two', '+DSH note', ''
 ].join('\n');
 
-test('builds every pinned skill file, transformed, under its skills-relative path', async () => {
+test('builds every pinned skill file verbatim (no transformation), under its skills-relative path', async () => {
   const out = await buildSkills({ pin, read, patches: new Map(), added: new Map() });
   assert.deepEqual([...out.keys()].sort(), ['a/SKILL.md', 'a/helper.md']);
-  assert.equal(out.get('a/SKILL.md').toString(), 'use b first\nline two\n');
+  assert.equal(out.get('a/SKILL.md').toString(), 'use superpowers:b first\nline two\n');
 });
 
 test('applies an overlay patch after the transformation', async () => {
   const out = await buildSkills({ pin, read, patches: new Map([['a/SKILL.md', patch]]), added: new Map() });
-  assert.equal(out.get('a/SKILL.md').toString(), 'use b first\nline two\nDSH note\n');
+  assert.equal(out.get('a/SKILL.md').toString(), 'use superpowers:b first\nline two\nDSH note\n');
   assert.equal(out.get('a/helper.md').toString(), 'plain\n');
 });
 

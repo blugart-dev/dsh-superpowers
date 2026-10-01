@@ -7,8 +7,8 @@
  *   2. npm run overlays      (this script: records the edit as a patch)
  *   3. npm run sync:check    (proves skills/ rebuilds identically from pin + overlays)
  *
- * For every pinned upstream file, the difference between the transformed
- * upstream text and skills/ becomes overlays/patches/<path>.patch; a file that
+ * For every pinned upstream file, the difference between the upstream text and
+ * skills/ becomes overlays/patches/<path>.patch; a file that
  * matches upstream gets no patch. Files with no upstream counterpart are copied
  * to overlays/added/. Stale overlays are removed.
  *
@@ -24,7 +24,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { listFiles } from './lib/files.mjs';
-import { readUpstreamFile, stripSkillPrefix } from './lib/upstream.mjs';
+import { readUpstreamFile } from './lib/upstream.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const pin = JSON.parse(readFileSync(join(root, 'upstream/pin.json'), 'utf8'));
@@ -51,7 +51,7 @@ try {
       continue;
     }
     const raw = await readUpstreamFile(pin, upstreamPath, cacheRoot);
-    const base = stripSkillPrefix(raw.toString('utf8'));
+    const base = raw.toString('utf8');
     if (base === current.toString('utf8')) continue;
 
     const a = join(work, 'a', 'skills', path);

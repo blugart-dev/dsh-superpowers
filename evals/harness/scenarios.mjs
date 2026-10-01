@@ -57,7 +57,7 @@ function gateOverlay({ bootstrap, announce, requiredSkills }) {
 }
 
 const NODE_PROJECT = {
-  'package.json': JSON.stringify({ name: 'fixture', type: 'module', scripts: { test: 'node --test' } }, null, 2) + '\n'
+  'package.json': JSON.stringify({ name: 'fixture', type: 'module', scripts: { test: 'node --test --test-isolation=none' } }, null, 2) + '\n'
 };
 
 export const SCENARIOS = [
@@ -68,6 +68,26 @@ export const SCENARIOS = [
       pass: summary.bootstrapCount === 1,
       detail: `bootstrap present ${summary.bootstrapCount}x`
     })
+  },
+  {
+    // Upstream's porting guide, Part 3, definition of done: this exact prompt
+    // must auto-trigger brainstorming before any code is written.
+    id: 'acceptance',
+    prompt: "Let's make a react todo list",
+    check: routesTo(['brainstorming'])
+  },
+  {
+    // Skills ship verbatim and still say `superpowers:<name>`. The DSH tool
+    // mapping tells the agent to load the bare name; this checks it does.
+    id: 'prefix',
+    mechanics: true,
+    prompt: 'Load the superpowers:verification-before-completion skill and summarize it in one sentence.',
+    check: (summary) => {
+      const ok = summary.skillLoads.find((l) => l.name === 'verification-before-completion' && l.ok !== false);
+      if (!ok) return { pass: false, detail: 'the bare skill was never loaded' };
+      const failedFirst = summary.skillLoads.some((l) => l.ok === false && l.time < ok.time);
+      return { pass: true, detail: failedFirst ? 'loaded after a failed prefixed attempt' : 'loaded by bare name directly' };
+    }
   },
   {
     id: 'route-build',

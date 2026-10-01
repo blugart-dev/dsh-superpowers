@@ -3,6 +3,67 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## 1.0.0-rc.1 — 2026-10-01
+
+Upstream: obra/superpowers v6.4.2 (unchanged). This is a release candidate: the
+repository stays private, and nothing is published to npm or proposed upstream.
+
+**Changed: skills now ship verbatim, following upstream's porting guide.**
+
+- **The rule.** `docs/porting-to-a-new-harness.md` (upstream) says to never edit
+  skill bodies to fit a harness; differences belong in a tool mapping.
+- **Before:** 0.1–0.3 patched 13 `SKILL.md` files with "DeepSeek Harness notes"
+  and stripped `superpowers:` prefixes.
+- **Now:** 73 of 74 upstream files are byte-identical. The exception is one line
+  in `using-superpowers`'s Platform Adaptation list, the only edit the guide
+  allows.
+- **The new mapping.** Everything DSH-specific lives in a rewritten, shorter
+  `using-superpowers/references/dsh-tools.md`. That includes the rule that
+  `superpowers:<name>` is loaded as `<name>`.
+- **The bootstrap inlines the mapping** after the skill (the guide's Shape B
+  pattern), so it is in context every session.
+- **Dropped:** the unverified claim that DSH silently drops a skill whose
+  frontmatter name differs from its directory. DSH's provider code has no such
+  check.
+
+**Added**
+
+- **Harness scenario `acceptance`:** upstream's definition-of-done prompt, "Let's
+  make a react todo list". **3/3**, with `brainstorming` loaded before any code.
+- **Harness scenario `prefix`:** a `superpowers:`-prefixed reference resolves to
+  the bare skill. **3/3**, loaded by bare name directly.
+- **Harness `--bundle <dir>`:** runs the current scenarios against another
+  checkout's bundle, for A/B comparisons between releases.
+- **Release readiness:**
+  - GitHub issue and PR templates, `SECURITY.md` and `docs/RELEASING.md`;
+  - CI and compat badges, plus npm metadata (`publishConfig`, `homepage`,
+    `bugs`; `npm publish --dry-run` is clean);
+  - repository topics.
+
+**Fixed**
+
+- **Harness fixtures used `node --test`,** which fails with `spawn EPERM` in DSH's
+  default sandbox, so their suite could never be green. Agents then correctly
+  refused to claim readiness, which the wrap-up checks misread as failures.
+  Fixtures now use `--test-isolation=none`, and a unit test pins it.
+
+**Verified** (DSH 0.2.0-rc.2, Windows)
+
+- **Full harness, 17 scenarios × 3:** 16 at 3/3, and `wrap-up-own` at 2/3.
+- **`wrap-up-own` A/B with a fixed fixture, old bundle (0.3.0) against new:**
+
+  | Bundle | Result |
+  |---|---|
+  | 0.3.0 | 4/6 (67%) |
+  | 1.0.0-rc.1 | 8/12 (67%) |
+
+  There is no regression. About a third of runs restate an earlier test result
+  instead of re-running it, in both designs. It is a model behaviour that
+  upstream's `verification-before-completion` already forbids; the scenario
+  stays as a guard.
+- **The system prompt is not repeated per step.** A 186-step session logged one
+  system-prompt event, containing the bootstrap once.
+
 ## 0.3.0 — 2026-10-01
 
 Upstream: obra/superpowers v6.4.2 (unchanged).

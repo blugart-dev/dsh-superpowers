@@ -9,7 +9,7 @@
 | | |
 |---|---|
 | 上游 | `obra/superpowers` **v6.4.2**，提交 `8ca22dba`（[pin](upstream/pin.json)） |
-| 技能 | 全部 15 个技能，上游 `skills/` 下的 74 个文件，每个文件都经过 git blob 哈希校验 |
+| 技能 | 全部 15 个技能，上游 `skills/` 下的 74 个文件，每个文件都经过 git blob 哈希校验；其中 73 个与上游逐字节一致 |
 | 已测试 | DeepSeek Harness Desktop `0.2.0-rc.2`，Windows 11 |
 
 ## 包含什么
@@ -19,25 +19,27 @@
 | 行 | 默认 | 作用 |
 |---|---|---|
 | `dsh-superpowers-skills` | 开 | 在所有工作区的每个会话中提供技能。 |
-| `dsh-superpowers-bootstrap` | 开 | 把上游的会话启动文本（包裹 `using-superpowers`）放进每个会话的系统提示词，替代 DSH 没有的 `SessionStart` 钩子。子智能体（`delegationDepth > 0`）不注入，与上游一致。 |
+| `dsh-superpowers-bootstrap` | 开 | 把上游的会话启动文本（包裹 `using-superpowers`），连同 DSH 工具映射，放进每个会话的系统提示词，替代 DSH 没有的 `SessionStart` 钩子。子智能体（`delegationDepth > 0`）不注入，与上游一致。 |
 | `dsh-superpowers-gate` | **关** | 可选的强制机制：会话加载技能之前，拒绝对源文件的 `write`/`edit`。**并非**上游的一部分。 |
 
-与上游的差异：
+与上游的差异刻意保持最小。上游的
+[移植指南](https://github.com/obra/superpowers/blob/main/docs/porting-to-a-new-harness.md)
+要求永远不要为适配某个 harness 而修改技能正文，本移植遵循这一点：
 
-- **技能名称：** 去掉 `superpowers:` 前缀，因为 DSH 按裸名称解析技能。
-- **DSH 说明：** 13 个 `SKILL.md` 增加了简短的 “DeepSeek Harness notes” 小节，涵盖 DSH 工具名、子智能体只有一层、在 Windows 上通过 Git Bash 运行上游的 bash 辅助脚本。
-- **改动记录：** 每处改动都是 [`overlays/`](overlays/) 中可审阅的补丁；`skills/` 中没有任何手工维护的内容。
+- **技能原样交付：** 唯一的例外，是在 `using-superpowers` 的 “Platform Adaptation” 列表中加了一行指向 DSH 映射的说明，这也是指南唯一允许的改动。
+- **一个 DSH 专用文件：** [`using-superpowers/references/dsh-tools.md`](skills/using-superpowers/references/dsh-tools.md)，把技能里的动作映射到 DSH 工具。它说明 `superpowers:<name>` 要按 `<name>` 加载、子智能体只有一层，以及如何在 Windows 上运行 bash 辅助脚本。引导文本会内联这份映射，因此每个会话都能看到。
+- **改动记录：** 每处改动都是 [`overlays/`](overlays/) 中可审阅的文件；`skills/` 中没有任何手工维护的内容。
 
 ## 安装
 
 在 DSH Desktop 的 **插件（Plugins）** 页面选择安装，输入：
 
 ```
-github:blugart-dev/dsh-superpowers#v0.3.0
+github:blugart-dev/dsh-superpowers#v1.0.0-rc.1
 ```
 
 也可以在 Creator 模式下让智能体执行：
-`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v0.3.0" }`。
+`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.1" }`。
 
 仓库目前为私有，安装时需要有读取权限的 git（SSH）凭据；没有权限时，可先克隆，再从本地路径安装。
 

@@ -24,6 +24,7 @@ SOFTWARE.
 
 The contents of skills/ are derived from obra/superpowers
 (https://github.com/obra/superpowers), Copyright (c) 2025 Jesse Vincent, used
-under the MIT License reproduced in LICENSE.superpowers. They are modified: the
-`superpowers:` skill-name prefix is removed and DeepSeek Harness notes are
-added. Every modification is recorded in overlays/.
+under the MIT License reproduced in LICENSE.superpowers. They are unmodified,
+except for one added line in skills/using-superpowers/SKILL.md that points to
+the added file skills/using-superpowers/references/dsh-tools.md. Both are
+recorded in overlays/.

@@ -23,16 +23,6 @@ GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
 BRANCH=$(git branch --show-current)
 ```
 
-```powershell
-# PowerShell equivalent — run this on DSH
-$GitDir    = (Resolve-Path (git rev-parse --git-dir)).Path
-$GitCommon = (Resolve-Path (git rev-parse --git-common-dir)).Path
-$Branch    = (git branch --show-current).Trim()
-```
-
-Note: git prints paths with forward slashes even on Windows, so compare the
-resolved values rather than relying on string equality of the raw output.
-
 **Submodule guard:** `GIT_DIR != GIT_COMMON` is also true inside git submodules. Before concluding "already in a worktree," verify you are not in a submodule:
 
 ```bash

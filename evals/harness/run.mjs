@@ -6,6 +6,8 @@
  *   npm run eval:harness -- --only gate,control   selected scenarios
  *   npm run eval:harness -- --repeat 3            each scenario three times
  *   npm run eval:harness -- --keep                keep profile, workspaces and sessions
+ *   npm run eval:harness -- --bundle <dir>        test another checkout's bundle (e.g. an
+ *                                                 older tag in a git worktree) with these scenarios
  *
  * What it does, all outside your own profiles:
  *   1. `npm pack` this repository - the exact files a user installs;
@@ -38,6 +40,7 @@ const only = option('--only')?.split(',');
 const repeat = Number(option('--repeat') ?? 1);
 const timeoutMs = Number(option('--timeout') ?? 180) * 1000;
 const keep = argv.includes('--keep');
+const bundleDir = option('--bundle') ?? root;
 
 const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh');
 const PROFILE = 'dsh-superpowers-eval';
@@ -71,7 +74,7 @@ function evalSessions() {
 const profileDir = join(dshHome, 'profiles', PROFILE);
 if (existsSync(profileDir)) rmSync(profileDir, { recursive: true, force: true });
 const packDir = mkdtempSync(join(tmpdir(), 'dsh-sp-pack-'));
-const packed = npmPack(root, packDir);
+const packed = npmPack(bundleDir, packDir);
 if (packed.status !== 0) {
   console.error('npm pack failed:\n' + packed.stderr);
   process.exit(1);

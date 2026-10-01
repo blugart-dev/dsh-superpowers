@@ -88,7 +88,7 @@ digraph process {
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [shape=box];
     "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
-    "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+    "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Setup: worktree, ledger check, read plan, pre-flight review" -> "Dispatch implementer subagent (./implementer-prompt.md)";
     "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer asks questions?";
@@ -117,14 +117,14 @@ digraph process {
     "More tasks remain?" -> "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" [label="no"];
     "Dispatch final code reviewer (../requesting-code-review/code-reviewer.md)" -> "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals";
     "Final findings? ONE fix dispatch, one scoped re-review, adjudicate residuals" -> "Final review clean: delete this plan's workspace";
-    "Final review clean: delete this plan's workspace" -> "Use finishing-a-development-branch";
+    "Final review clean: delete this plan's workspace" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
 
 ## Setup
 
 Ensure the work happens in an isolated workspace: use
-using-git-worktrees to create one or verify the existing one.
+superpowers:using-git-worktrees to create one or verify the existing one.
 Never start implementation on a main/master branch without your human
 partner's explicit consent.
 
@@ -450,7 +450,7 @@ branch started from, e.g. `git merge-base main HEAD`) and include the
 printed path in the final review dispatch, so the final reviewer reads
 one file instead of re-deriving the branch diff with git commands. Dispatch
 on the most capable available model (see Model Selection), using
-requesting-code-review's
+superpowers:requesting-code-review's
 [code-reviewer.md](../requesting-code-review/code-reviewer.md). Point it at
 the ledger's deferred-minor and parked lines so it can triage which must be
 fixed before merge.
@@ -484,36 +484,7 @@ delete this plan's workspace (`rm -rf <workspace>`) — the git history is
 the record now. Sibling directories belong to other plans; leave them
 alone.
 
-Use finishing-a-development-branch.
-
-## DeepSeek Harness notes
-
-Read `../using-superpowers/references/dsh-tools.md` for the full mapping. What
-changes for this skill specifically:
-
-- **The three dispatch templates are installed** beside this file:
-  `implementer-prompt.md`, `task-reviewer-prompt.md`, `re-review-prompt.md`.
-- **The `scripts/` helpers are installed, and they are bash.** On macOS and Linux
-  run them as this skill shows. On Windows, DSH's shell tool is `pwsh`: run them
-  through Git for Windows' bash by absolute path, never bare `bash` (it can resolve
-  to WSL). Locate it with
-  `$bash = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'usr\bin\bash.exe'`,
-  then call `& $bash <this skill dir>/scripts/<name> <args>`. One upstream edge case: `task-done` exits 1 with no message when the test
-  command prints nothing (`set -o pipefail` plus an empty `grep`), so use a test
-  command that reports its result. If no bash is available, do the scripts'
-  work directly (see `../using-superpowers/references/dsh-tools.md`).
-- **Delegation depth is 1 and the harness enforces it.** An implementer cannot
-  dispatch helpers, and cannot dispatch its own reviewer. The no-subagents contract
-  is not merely convention — a nested dispatch fails outright. Say so in the brief
-  so the implementer does not burn a turn discovering it.
-- **Dispatch with `subagent`, continue with `send_message`.** Fix-loop rounds 1–3
-  genuinely resume the original implementer. Use `list_agents` to reconcile live
-  children between bounded waits rather than polling with short timeouts.
-- **Specify the model explicitly on every dispatch.** An omitted model inherits
-  this session's model, silently defeating the Model Selection section.
-- **Skills are addressed by bare name.** `finishing-a-development-branch`, not
-  `superpowers:finishing-a-development-branch`.
-- On Windows the shell tool is `pwsh`, not bash.
+Use superpowers:finishing-a-development-branch.
 
 ## Common Rationalizations
 
@@ -593,5 +564,5 @@ Final reviewer: All requirements met. Deferred minors triaged: none block merge.
 
 [Delete this plan's workspace — the record now lives in git]
 
-Done! Using finishing-a-development-branch.
+Done! Using superpowers:finishing-a-development-branch.
 ```

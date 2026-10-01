@@ -19,6 +19,9 @@ import apply, { SECTION_NAME, bootstrapText, resolveSettings } from '../src/boot
 const VENDORED_SKILL = fileURLToPath(
   new URL('../skills/using-superpowers/SKILL.md', import.meta.url)
 );
+const DSH_MAPPING = fileURLToPath(
+  new URL('../skills/using-superpowers/references/dsh-tools.md', import.meta.url)
+);
 
 /**
  * A minimal stand-in for the Host context.
@@ -54,13 +57,13 @@ function stubContext({ systemPrompt = true, sectionThrows = false } = {}) {
 }
 
 test('the wrapper matches upstream hooks/session-start, adapted only for DSH naming', () => {
-  const text = bootstrapText('SKILL BODY');
+  const text = bootstrapText('SKILL BODY', 'MAPPING');
   assert.equal(
     text,
     '<EXTREMELY_IMPORTANT>\nYou have superpowers.\n\n' +
       "**Below is the full content of your 'using-superpowers' skill - your introduction " +
       "to using skills. For all other skills, use the 'skill' tool:**\n\n" +
-      'SKILL BODY\n</EXTREMELY_IMPORTANT>'
+      'SKILL BODY\n\nMAPPING\n</EXTREMELY_IMPORTANT>'
   );
 });
 
@@ -78,7 +81,9 @@ test('an active bootstrap registers the vendored using-superpowers skill as one 
   assert.equal(section.interpolate, false);
   // Resolved per assembly: a top-level session gets the full bootstrap.
   assert.equal(typeof section.text, 'function');
-  assert.equal(section.text({}), bootstrapText(readFileSync(VENDORED_SKILL, 'utf8')));
+  assert.equal(section.text({}), bootstrapText(readFileSync(VENDORED_SKILL, 'utf8'), readFileSync(DSH_MAPPING, 'utf8')));
+  // Upstream Shape B: the harness tool mapping rides inside the bootstrap.
+  assert.match(section.text({}), /# DeepSeek Harness tool mapping/);
 });
 
 const atDepth = (delegationDepth) => ({ agent: { session: { header: { delegationDepth } } } });
@@ -90,7 +95,7 @@ test('subagent sessions get no bootstrap; top-level and unknown sessions do', ()
   const { context, calls } = stubContext();
   apply(context, {});
   const { text } = calls.sections[0];
-  const full = bootstrapText(readFileSync(VENDORED_SKILL, 'utf8'));
+  const full = bootstrapText(readFileSync(VENDORED_SKILL, 'utf8'), readFileSync(DSH_MAPPING, 'utf8'));
   assert.equal(text(atDepth(1)), '');
   assert.equal(text(atDepth(2)), '');
   assert.equal(text(atDepth(0)), full);

@@ -267,17 +267,6 @@ Wait for the user's response. If they request changes, make them and re-run the 
 
 ## Visual Companion
 
-> **DeepSeek Harness note.** `visual-companion.md` and `scripts/` are installed.
-> On Windows, DSH's shell tool is `pwsh`: start the server through Git for
-> Windows' bash by absolute path (see `../using-superpowers/references/dsh-tools.md`),
-> not bare `bash`, which can resolve to WSL. Under Git Bash, upstream's script runs
-> the server in the foreground (Git Bash reaps `nohup` children), so start it as a
-> managed background job with the `job_*` tools rather than a blocking call, and
-> read the `server-started` JSON line from the job's output for the URL. The
-> script itself has been checked on Windows under Git Bash (it starts and serves
-> the page); launching it as a DSH job is not yet verified. If the server does not
-> start or your partner cannot open the URL, say so and continue text-only.
-
 A browser-based companion for showing mockups, diagrams, and visual options during brainstorming. Available as a tool — not a mode. Accepting the companion means it's available for questions that benefit from visual treatment; it does NOT mean every question goes through the browser.
 
 **Offering the companion (just-in-time):** Do NOT offer it upfront. Wait until a question would genuinely be clearer shown than told — a real mockup / layout / diagram question, not merely a UI *topic*. The first time that happens, offer it then, as its own message:

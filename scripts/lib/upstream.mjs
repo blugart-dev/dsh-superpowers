@@ -1,7 +1,6 @@
 /**
  * Upstream access: fetch the pinned obra/superpowers files, verify each against
- * the git blob hash recorded in upstream/pin.json, and apply the one
- * transformation every vendored file receives.
+ * the git blob hash recorded in upstream/pin.json.
  */
 
 import { createHash } from 'node:crypto';
@@ -16,21 +15,6 @@ import { dirname, join } from 'node:path';
  */
 export function gitBlobSha(buffer) {
   return createHash('sha1').update(`blob ${buffer.length}\0`).update(buffer).digest('hex');
-}
-
-/**
- * The single permitted transformation of upstream text.
- *
- * Upstream addresses skills as `superpowers:<name>`; DeepSeek Harness resolves
- * skills by bare name, where the prefixed form does not resolve. Only a prefix
- * followed by a kebab-case name is removed; prose such as "superpowers: the
- * plugin" and paths like `docs/superpowers/` are untouched.
- *
- * @param {string} text - upstream file contents.
- * @returns {string} the transformed text.
- */
-export function stripSkillPrefix(text) {
-  return text.replace(/superpowers:(?=[a-z0-9-])/g, '');
 }
 
 /**

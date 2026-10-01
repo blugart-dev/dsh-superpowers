@@ -11,7 +11,7 @@ Write implementation plans for an engineer who has not seen this codebase or thi
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** If working in an isolated worktree, it should have been created via the `using-git-worktrees` skill at execution time.
+**Context:** If working in an isolated worktree, it should have been created via the `superpowers:using-git-worktrees` skill at execution time.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
@@ -56,7 +56,7 @@ independently testable deliverable.
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use subagent-driven-development (recommended) or executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -176,24 +176,6 @@ After writing the complete plan, look at the spec with fresh eyes and check the 
 
 If you find issues, fix them inline. No need to re-review — just fix and move on. If you find a spec requirement with no task, add the task.
 
-## DeepSeek Harness notes
-
-- **Plan and spec paths are conventions, not requirements.** `docs/superpowers/plans/`
-  and `docs/superpowers/specs/` work fine — keep them unless your human partner
-  names somewhere else. Just be consistent, and put the plan where the executor
-  can read it.
-- **The `executing-plans` and `subagent-driven-development` helper `scripts/`
-  are installed but are bash.** The executor runs them through Git Bash, as those
-  skills' DeepSeek Harness notes describe.
-- **A `subagent` tool exists here**, so "subagent-driven" is a genuinely available
-  option, subject to delegation depth 1: an implementer cannot dispatch helpers or
-  its own reviewer.
-- **State the test command in the plan as it must actually run.** The executor's
-  shell may be `pwsh` (Windows), so write the real invocation rather than
-  assuming a POSIX shell.
-- **Skills are referenced by bare name** — `subagent-driven-development`,
-  `executing-plans`, `test-driven-development` — never `superpowers:<name>`.
-
 ## Execution Handoff
 
 After saving and self-reviewing the plan, link it for your human partner
@@ -216,7 +198,7 @@ them to review the plan and choose an execution method before implementation.
 **"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Please review the plan. Does it capture what you want?"**
 
 **If Subagent-driven chosen:**
-- **REQUIRED SUB-SKILL:** Use subagent-driven-development
+- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
 
 **If Native chosen:**
-- **REQUIRED SUB-SKILL:** Use executing-plans
+- **REQUIRED SUB-SKILL:** Use superpowers:executing-plans

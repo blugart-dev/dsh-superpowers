@@ -27,8 +27,8 @@ Then announce "Using [skill] to [purpose]" and follow the skill exactly. If it h
 
 When multiple skills apply, process skills come first — they set the approach, then implementation skills (frontend-design, etc.) carry it out. Brainstorming and systematic-debugging are Superpowers' most common process skills, but the rule holds for any of them.
 
-- "Let's build X" → brainstorming first, then implementation skills.
-- "Fix this bug" → systematic-debugging first, then domain skills.
+- "Let's build X" → superpowers:brainstorming first, then implementation skills.
+- "Fix this bug" → superpowers:systematic-debugging first, then domain skills.
 
 ## Red Flags
 
@@ -59,45 +59,8 @@ If your harness appears here, read its reference file for special instructions:
 - Antigravity: `references/antigravity-tools.md`
 - Hermes Agent: `references/hermes-tools.md`
 - Muse: `references/muse-tools.md`
-- DeepSeek Harness: `references/dsh-tools.md` — **this is the harness you are on.**
-
-Read `references/dsh-tools.md` for the complete Claude Code → DeepSeek Harness
-tool mapping. In short:
-
-| Upstream names | On DeepSeek Harness |
-|---|---|
-| `Bash` | the `pwsh` tool (Windows) |
-| `Read` / `Write` / `Edit` | `read` / `write` / `edit` |
-| `Glob` / `Grep` | `glob` / `grep` |
-| `TodoWrite` | `todo_write` |
-| `Task` (subagent) | `subagent` / `subagent_fork` |
-| `ExitPlanMode` | `exit_plan_mode` |
-| `AskUserQuestion` | `ask_user_question` |
-| `WebFetch` / `WebSearch` | `web_fetch` / `web_search` |
-| Load a skill | the `skill` tool |
-
-**Skills are addressed by their bare kebab-case name.** `test-driven-development`,
-not `superpowers:test-driven-development`. A prefixed name does not resolve.
-
-**Where skills live.** DeepSeek Harness scans roots in priority order:
-`<projectRoot>/.dsh/skills` (100), `<projectRoot>/.agents/skills` (200),
-`Config.customSkillDirs` (300), `<dshHome>/skills` (400, i.e. `~/.dsh/skills`),
-`<agentsHome>/skills` (500). A skill is a directory bundle `<name>/SKILL.md`
-whose frontmatter `name` matches the directory, or a flat `<name>.md`. **Nested
-`**/SKILL.md` discovery is not supported** — never nest a skill inside another
-skill's folder. The filesystem watcher picks up added bundles live, so a new
-skill appears in the catalog without restarting anything. The Superpowers skills
-themselves are served by the `dsh-superpowers` bundle at the packaged rank (600),
-so a same-named skill in any of those roots overrides them.
-
-**How this bootstrap reaches you.** On Claude Code a session-start hook injects
-this skill into every session. DeepSeek Harness has no hook system; here the
-`dsh-superpowers` bundle registers this skill as a system-prompt section in
-every session of the profile instead, which also survives compaction. If you are
-reading this only because you loaded it with the `skill` tool, that section may
-not be active. Either way the catalog is not self-triggering: checking it before
-you respond is your responsibility.
+- DeepSeek Harness: `references/dsh-tools.md`
 
 ## User Instructions
 
-User instructions (`AGENTS.md` on DeepSeek Harness; `CLAUDE.md`, `GEMINI.md`, etc. elsewhere; and direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.
+User instructions (CLAUDE.md, AGENTS.md, GEMINI.md, etc, direct requests) take precedence over skills, which in turn override default behavior. Only skip skill workflows or instructions when your human partner has explicitly told you to.

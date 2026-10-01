@@ -27,24 +27,12 @@ Tests failing (<N> failures). Must fix before completing:
 
 ## Step 2: Detect Environment
 
-On Windows, DSH's shell tool is `pwsh`. The upstream bash form is shown first,
-then its PowerShell equivalent — use the PowerShell one on Windows.
-
 ```bash
 GIT_DIR=$(cd "$(git rev-parse --git-dir)" 2>/dev/null && pwd -P)
 GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" 2>/dev/null && pwd -P)
 # Capture now, while still inside the workspace — Step 5 changes directory
 # before cleanup (Step 6) needs this value
 WORKTREE_PATH=$(git rev-parse --show-toplevel)
-```
-
-```powershell
-# PowerShell equivalent — run this on DSH
-$GitDir     = (Resolve-Path (git rev-parse --git-dir)).Path
-$GitCommon  = (Resolve-Path (git rev-parse --git-common-dir)).Path
-# Capture now, while still inside the workspace — Step 5 changes directory
-# before cleanup (Step 6) needs this value
-$WorktreePath = (git rev-parse --show-toplevel).Trim()
 ```
 
 This determines which menu to show and how cleanup works:

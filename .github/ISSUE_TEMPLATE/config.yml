@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Superpowers methodology (upstream)
+    url: https://github.com/obra/superpowers/issues
+    about: Questions or changes about the skills' content belong upstream.

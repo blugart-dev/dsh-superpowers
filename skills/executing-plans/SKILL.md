@@ -44,20 +44,20 @@ those, stop and ask.
 
 ## When to Use
 
-- You have a plan from writing-plans and your human partner
+- You have a plan from superpowers:writing-plans and your human partner
   chose inline execution at the handoff.
 - Your harness has no subagent tool (see the per-platform references in
   `../using-superpowers/references/`). Never fabricate a dispatch; run
   the plan here.
 - Tasks are mostly independent — the same precondition as
-  subagent-driven-development.
+  superpowers:subagent-driven-development.
 
 A fully specified plan makes inline execution transcription plus testing:
 it runs well on a mid-tier session model, and the one place the most
 capable model earns its cost is the final review, which this skill
 dispatches separately. Tell your human partner so when they choose inline.
 
-Prefer subagent-driven-development when your human partner
+Prefer superpowers:subagent-driven-development when your human partner
 wants a review gate on every task, or when the plan is long enough that
 its later tasks would run on a compacted context. Inline execution over a
 long plan still works — the ledger is what makes it recoverable — but the
@@ -85,7 +85,7 @@ digraph process {
     "Final whole-branch review (fresh reviewer if you have one)" [shape=box];
     "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger" [shape=box];
     "Final review clean: delete this plan's workspace" [shape=box];
-    "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
+    "Use superpowers:finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
 
     "Setup: worktree, workspace + ledger, read plan + spec, pre-flight scan" -> "task-start: brief + BASE; read the brief";
     "task-start: brief + BASE; read the brief" -> "Work the steps in order: TDD, run every verification, read every output";
@@ -101,14 +101,14 @@ digraph process {
     "More tasks remain?" -> "Final whole-branch review (fresh reviewer if you have one)" [label="no"];
     "Final whole-branch review (fresh reviewer if you have one)" -> "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger";
     "Re-grade, then: Critical/Important → ONE fix pass, each fix RED→GREEN + green suite; Minor → ledger" -> "Final review clean: delete this plan's workspace";
-    "Final review clean: delete this plan's workspace" -> "Use finishing-a-development-branch";
+    "Final review clean: delete this plan's workspace" -> "Use superpowers:finishing-a-development-branch";
 }
 ```
 
 ## Setup
 
 Ensure the work happens in an isolated workspace: use
-using-git-worktrees to create one or verify the existing one.
+superpowers:using-git-worktrees to create one or verify the existing one.
 Never start implementation on a main/master branch without your human
 partner's explicit consent.
 
@@ -118,7 +118,7 @@ failure as a controller re-dispatching them, paid for in your own context.
 Track progress in a ledger file, not only in todos. Harness todos are a
 live view; the ledger is the record.
 
-The workspace and ledger are shared with subagent-driven-development
+The workspace and ledger are shared with superpowers:subagent-driven-development
 — same directory, same format — so a plan can change executors mid-flight
 and the new one resumes from the same ledger.
 
@@ -146,7 +146,7 @@ authority the plan argues from, and conflicts inside the plan resolve
 against it. A plan with no reachable spec gets a ledger note saying so —
 rulings made without one are provisional.
 
-**REQUIRED SUB-SKILL:** load test-driven-development now,
+**REQUIRED SUB-SKILL:** load superpowers:test-driven-development now,
 before Task 1. It governs every step of every task below; a plan whose
 steps already say "write the failing test first" does not exempt you
 from reading it.
@@ -183,7 +183,7 @@ never in a call of its own.
 ### 2. Work the steps
 
 The plan's steps are already in RED-GREEN order; follow them in that
-order under test-driven-development, loaded at setup. A test
+order under superpowers:test-driven-development, loaded at setup. A test
 step's code is written first and run first. Watching it fail is a step,
 not a formality — a test that passes before the implementation exists is
 a finding about the test.
@@ -192,7 +192,7 @@ Every step that runs a command has an `Expected:` line. Run the command,
 read its output, and compare. Three outcomes:
 
 - **Matches.** Next step.
-- **The code is wrong.** Use systematic-debugging. Find the
+- **The code is wrong.** Use superpowers:systematic-debugging. Find the
   cause; never patch the symptom to make the step's output match.
 - **The plan is wrong** — a step contradicts the spec, an interface from an
   earlier task doesn't match what this task consumes, a command that
@@ -216,7 +216,7 @@ in this session — not inferred from the diff looking right:
 - Every `Expected:` line in the brief was compared against real output.
 - Every deviation from the brief has a `Ruling:` line in the ledger.
 
-**REQUIRED SUB-SKILL:** verification-before-completion governs
+**REQUIRED SUB-SKILL:** superpowers:verification-before-completion governs
 the claim. If any item is missing, the task is not complete: finish it.
 
 ### 4. Complete the task
@@ -239,7 +239,7 @@ Run `../subagent-driven-development/scripts/review-package PLAN_FILE MERGE_BASE 
 
 **With a subagent tool:** dispatch the reviewer on the most capable
 available model — the whole-branch review is a judgment task — using
-requesting-code-review's
+superpowers:requesting-code-review's
 [code-reviewer.md](../requesting-code-review/code-reviewer.md), with the
 package path, the plan and spec paths, the plan's Review Focus section
 verbatim if it has one (the input classes and failure modes the plan's
@@ -301,37 +301,7 @@ When the final review is clean and its fixes are committed, delete this
 plan's workspace directory — the git history is the record now. Sibling
 directories belong to other plans; leave them alone.
 
-Use finishing-a-development-branch.
-
-## DeepSeek Harness notes
-
-Read `../using-superpowers/references/dsh-tools.md` for the full mapping.
-
-- **The `scripts/` helpers are installed, and they are bash.** On macOS and Linux
-  run them as this skill shows. On Windows, DSH's shell tool is `pwsh`: run them
-  through Git for Windows' bash by absolute path, never bare `bash` (it can resolve
-  to WSL). Locate it with
-  `$bash = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'usr\bin\bash.exe'`,
-  then call `& $bash <this skill dir>/scripts/<name> <args>`. One upstream edge case: `task-done` exits 1 with no message when the test
-  command prints nothing (`set -o pipefail` plus an empty `grep`), so use a test
-  command that reports its result. If no bash is available, do the scripts'
-  work directly (see `../using-superpowers/references/dsh-tools.md`).
-  `task-start` calls `../subagent-driven-development/scripts/task-brief` by relative
-  path, so run it from where it is installed rather than copying it.
-- **`code-reviewer.md` *is* installed** at
-  `../requesting-code-review/code-reviewer.md`, so the final review can use it.
-  Dispatch that reviewer with `subagent` when one is available; otherwise perform
-  the review yourself as a separate pass and say so in the ledger and your final
-  message, as this skill already instructs.
-- **A `subagent` tool does exist here**, so "no subagent tool" is not the default
-  reason to choose inline execution — the real reasons are your human partner
-  preferring the cheaper path, or tasks being tightly coupled.
-- **Skills are addressed by bare name** (`test-driven-development`), never
-  `superpowers:test-driven-development`.
-- On Windows the shell tool is `pwsh`. Where this skill shows `bash` for git or test invocations, run
-  the equivalent in `pwsh`. Bash examples that merely illustrate a technique are
-  technique, not syntax to transliterate.
-- Background genuinely long commands with the `job_*` tools instead of blocking.
+Use superpowers:finishing-a-development-branch.
 
 ## Common Rationalizations
 
@@ -399,5 +369,5 @@ Deferred minors:
 
 [Delete this plan's workspace — the record now lives in git]
 
-Using finishing-a-development-branch.
+Using superpowers:finishing-a-development-branch.
 ```

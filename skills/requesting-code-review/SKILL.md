@@ -72,20 +72,6 @@ You: [Fix progress indicators]
 [Continue to Task 3]
 ```
 
-## DeepSeek Harness notes
-
-- **Dispatch the reviewer with the `subagent` tool**, pasting the filled template
-  into its prompt. `code-reviewer.md` is in this directory.
-- **Delegation depth is 1 and enforced.** The reviewer cannot spawn helpers, which
-  is exactly why the template's "you do not dispatch subagents" rule matters: a
-  nested dispatch fails with "subagent depth 2 exceeds maxDepth 1".
-- **Hand the diff over as a file, not as pasted text.** Everything pasted into a
-  dispatch prompt stays in your context for the rest of the session. Write the
-  range's `git log --oneline`, `git diff --stat` and `git diff -U10` into one file
-  and pass the path.
-- **Specify the model explicitly.** An omitted model inherits this session's model.
-- The `git` commands above work as written in `pwsh` and in POSIX shells.
-
 ## Common Rationalizations
 
 | Excuse | Reality |

@@ -87,19 +87,45 @@ DSH profile
   - In live testing, the plugin was mounted in more than one Host scope per
     activation, and only the scope with a skill registry armed.
 
+## Skills verbatim, adaptation in the mapping
+
+This follows upstream's
+[porting guide](https://github.com/obra/superpowers/blob/main/docs/porting-to-a-new-harness.md),
+which says skills are shared verbatim by every harness. A port adds a tool
+mapping and a bootstrap, and "never reaches into `skills/*/SKILL.md`".
+
+- **Upstream files.** 73 of the 74 are byte-identical. `using-superpowers/SKILL.md`
+  gains one line in its Platform Adaptation list, the only edit the guide allows.
+- **The mapping.** `using-superpowers/references/dsh-tools.md` maps actions to DSH
+  tools. It also covers the `superpowers:` prefix: DSH resolves bare kebab-case
+  names, so the mapping tells the agent to drop the prefix. The `prefix` harness
+  scenario checks that it does.
+- **The bootstrap inlines the mapping.** This is the guide's pattern for
+  in-process plugins, so the mapping is in context every session, not a file the
+  agent may or may not open.
+- **One deliberate difference from that pattern.** The guide's in-process
+  references inject the bootstrap as a user message, because a system message
+  repeated every turn bloats tokens. DSH's system-prompt section is assembled
+  once into a single system prompt per request, so nothing repeats or
+  accumulates. It also survives compaction without re-injection.
+
+An earlier version (0.1–0.3) instead patched 13 skill bodies with "DeepSeek
+Harness notes". The full harness was re-run after the switch; see CHANGELOG
+1.0.0-rc.1.
+
 ## Why the skills are generated
 
 - **What `skills/` is made of.** A pure function of `upstream/pin.json`,
-  `overlays/patches/` and `overlays/added/`.
+  `overlays/patches/` (the one pointer line) and `overlays/added/` (the mapping).
 - **What `npm run sync` does.** It fetches each pinned file, verifies its git
-  blob SHA-1, applies the single permitted transformation (strip `superpowers:`
-  before a kebab-case name), applies the patches with a strict in-process applier
-  (no fuzz), and adds the DSH-only files.
+  blob SHA-1, applies the patch with a strict in-process applier (no fuzz), and
+  adds the DSH-only file.
 - **What the build guarantees:**
   - **Provenance.** Every shipped byte is either upstream at a known commit or a
-    reviewable patch.
-  - **Upgrades.** Moving the pin re-applies every DSH change automatically, and
-    fails loudly, naming the hunk, where upstream moved underneath one.
+    reviewable file in `overlays/`.
+  - **Upgrades.** Moving the pin rebuilds everything, and fails loudly, naming
+    the hunk, if upstream changes the Platform Adaptation list underneath the
+    pointer.
   - **CI.** `sync --check` proves the committed tree is exactly what the inputs
     produce.
 
@@ -109,6 +135,7 @@ DSH profile
   `>=0.2.0-rc.2`. DSH checks these ranges before it imports the bundle.
 - **Optional peers.** The peers are marked optional so pnpm does not try to
   install them; the Host supplies them.
-- **Tested version.** Only DSH Desktop `0.2.0-rc.2` on Windows has been tested.
-  The DSH notes in the skills are written to be platform-conditional, but have
-  not been exercised on macOS or Linux.
+- **Tested version.** Behaviour has been tested only on DSH Desktop `0.2.0-rc.2`
+  on Windows. Composition is also checked on Linux by the `compat` workflow. The
+  mapping is written per platform, but its macOS and Linux guidance has not been
+  exercised in sessions.

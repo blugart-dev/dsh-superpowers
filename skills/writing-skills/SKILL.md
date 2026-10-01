@@ -9,20 +9,13 @@ description: Use when creating new skills, editing existing skills, or verifying
 
 **Writing skills IS Test-Driven Development applied to process documentation.**
 
-**Personal skills live in your runtime's skills directory.** On DeepSeek Harness the scanned roots, in priority order, are `<projectRoot>/.dsh/skills` (100), `<projectRoot>/.agents/skills` (200), `Config.customSkillDirs` (300), `~/.dsh/skills` (400), and `~/.agents/skills` (500). `~/.agents/skills/` is also a cross-runtime alias recognized by Codex, Copilot CLI, and Gemini CLI.
-
-**DeepSeek Harness constraints that shape skill authoring** (see `using-superpowers/references/dsh-tools.md`):
-
-- A skill is `<root>/<skill-name>/SKILL.md` or a flat `<root>/<skill-name>.md`. **Nested `**/SKILL.md` discovery is not supported** — never put a skill inside another skill's folder.
-- The frontmatter `name` **must exactly match the containing directory name** (kebab-case). A mismatch or omission makes DSH silently drop the skill.
-- Reference other skills by bare name (`test-driven-development`), never as `superpowers:<name>` — the prefix does not resolve.
-- New bundles are picked up live by the filesystem watcher; there is no restart step and no hook to register.
+**Personal skills live in your runtime's skills directory** (`~/.claude/skills/` on Claude Code) — see [codex-tools.md](../using-superpowers/references/codex-tools.md) or [gemini-tools.md](../using-superpowers/references/gemini-tools.md) for the path on those runtimes. Codex, Copilot CLI, and Gemini CLI all also recognize `~/.agents/skills/` as a cross-runtime alias.
 
 You write test cases (pressure scenarios with subagents), watch them fail (baseline behavior), write the skill (documentation), watch tests pass (agents comply), and refactor (close loopholes).
 
 **Core principle:** If you didn't watch an agent fail without the skill, you don't know if the skill teaches the right thing.
 
-**REQUIRED BACKGROUND:** You MUST understand test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
+**REQUIRED BACKGROUND:** You MUST understand superpowers:test-driven-development before using this skill. That skill defines the fundamental RED-GREEN-REFACTOR cycle. This skill adapts TDD to documentation.
 
 **Official guidance:** For Anthropic's official skill authoring best practices, see anthropic-best-practices.md. This document provides additional patterns and guidelines that complement the TDD-focused approach in this skill.
 
@@ -272,13 +265,6 @@ wc -w skills/path/SKILL.md
 # Other frequently-loaded: aim for <200 total
 ```
 
-On Windows, DSH's shell tool is `pwsh`, where `wc` does not exist. Use:
-
-```powershell
-(Get-Content skills/path/SKILL.md -Raw).Split(' ', "`n", "`t").Where({$_ -ne ''}).Count
-```
-
-
 **Name by what you DO or core insight:**
 - ✅ `condition-based-waiting` > `async-test-helpers`
 - ✅ `using-skills` not `skill-usage`
@@ -294,8 +280,8 @@ On Windows, DSH's shell tool is `pwsh`, where `wc` does not exist. Use:
 **When writing documentation that references other skills:**
 
 Use skill name only, with explicit requirement markers:
-- ✅ Good: `**REQUIRED SUB-SKILL:** Use test-driven-development`
-- ✅ Good: `**REQUIRED BACKGROUND:** You MUST understand systematic-debugging`
+- ✅ Good: `**REQUIRED SUB-SKILL:** Use superpowers:test-driven-development`
+- ✅ Good: `**REQUIRED BACKGROUND:** You MUST understand superpowers:systematic-debugging`
 - ❌ Bad: `See skills/testing/test-driven-development` (unclear if required)
 - ❌ Bad: `@skills/testing/test-driven-development/SKILL.md` (force-loads, burns context)
 
@@ -328,12 +314,6 @@ digraph when_flowchart {
 - Labels without semantic meaning (step1, helper2)
 
 See `graphviz-conventions.dot` in this directory for graphviz style rules.
-
-> **DeepSeek Harness note — rendering needs Graphviz.** `graphviz-conventions.dot`
-> and `render-graphs.js` are installed, but `render-graphs.js` shells out to
-> Graphviz's `dot`, which is often not installed.
-> Run `dot -V` before offering to render. If it is missing, follow the
-> conventions file and leave the diagram inline as a DOT code block.
 
 **Visualizing for your human partner:** Use `render-graphs.js` in this directory to render a skill's flowcharts to SVG:
 ```bash
@@ -412,7 +392,7 @@ Edit skill without testing? Same violation.
 - Don't "adapt" while running tests
 - Delete means delete
 
-**REQUIRED BACKGROUND:** The test-driven-development skill explains why this matters. Same principles apply to documentation.
+**REQUIRED BACKGROUND:** The superpowers:test-driven-development skill explains why this matters. Same principles apply to documentation.
 
 ## Testing All Skill Types
 

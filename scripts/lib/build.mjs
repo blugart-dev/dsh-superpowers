@@ -2,15 +2,17 @@
  * Assemble the shipped skills/ tree, in memory, from three inputs:
  *
  *   1. the pinned upstream files (every `skills/**` entry in upstream/pin.json),
- *   2. the one permitted transformation (`stripSkillPrefix`),
- *   3. the DSH overlays: unified-diff patches, plus DSH-only added files.
+ *   2. the DSH overlays: unified-diff patches, plus DSH-only added files.
+ *
+ * Upstream text is used verbatim. Following upstream's porting guide, skills
+ * are never edited to fit the harness; DSH differences live in the tool
+ * mapping (`using-superpowers/references/dsh-tools.md`).
  *
  * Pure apart from the injected `read`, so it is unit-testable and the same code
  * serves both `sync` (write the tree) and `sync --check` (compare with disk).
  */
 
 import { applyPatch } from './patch.mjs';
-import { stripSkillPrefix } from './upstream.mjs';
 
 const SKILLS = 'skills/';
 
@@ -45,7 +47,7 @@ export async function buildSkills({ pin, read, patches, added }) {
   const failures = [];
   for (const path of upstreamPaths.sort()) {
     const raw = await read(SKILLS + path);
-    let text = stripSkillPrefix(raw.toString('utf8'));
+    let text = raw.toString('utf8');
     const patch = patches.get(path);
     if (patch !== undefined) {
       try {

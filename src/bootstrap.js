@@ -40,12 +40,17 @@ const SECTION_ORDER = 9000;
 /** The shipped skill, resolved from this module so the bundle has no paths to configure. */
 const DEFAULT_SKILL_FILE = fileURLToPath(new URL('../skills/using-superpowers/SKILL.md', import.meta.url));
 
+/** The DSH tool mapping, the one file that adapts the verbatim skills to DSH. */
+const DEFAULT_MAPPING_FILE = fileURLToPath(
+  new URL('../skills/using-superpowers/references/dsh-tools.md', import.meta.url)
+);
+
 /**
  * Apply defaults to a row config. `config` is replaced wholesale on override, so
  * every field defaults here and unknown keys are ignored.
  *
- * @param {{ bootstrap?: boolean, subagents?: boolean, skillFile?: string, diagnosticsLog?: string }} [config]
- * @returns {{ bootstrap: boolean, subagents: boolean, skillFile: string, diagnosticsLog: string | undefined }}
+ * @param {{ bootstrap?: boolean, subagents?: boolean, skillFile?: string, mappingFile?: string, diagnosticsLog?: string }} [config]
+ * @returns {{ bootstrap: boolean, subagents: boolean, skillFile: string, mappingFile: string, diagnosticsLog: string | undefined }}
  */
 export function resolveSettings(config) {
   const raw = config ?? {};
@@ -53,22 +58,28 @@ export function resolveSettings(config) {
     bootstrap: raw.bootstrap !== false,
     subagents: raw.subagents === true,
     skillFile: raw.skillFile ?? DEFAULT_SKILL_FILE,
+    mappingFile: raw.mappingFile ?? DEFAULT_MAPPING_FILE,
     diagnosticsLog: typeof raw.diagnosticsLog === 'string' ? raw.diagnosticsLog : undefined
   };
 }
 
 /**
- * Upstream's session-start wrapper around the skill text.
+ * Upstream's session-start wrapper around the skill text, with the harness tool
+ * mapping inlined after it. Upstream's porting guide does the same for
+ * in-process plugins ("Shape B"): the skills stay verbatim and the mapping
+ * travels with the bootstrap, so the model has it without opening a file.
  *
  * @param {string} skillContent - the full using-superpowers SKILL.md.
+ * @param {string} [mapping] - the DSH tool mapping; omitted if unreadable.
  * @returns {string} the section text.
  */
-export function bootstrapText(skillContent) {
+export function bootstrapText(skillContent, mapping) {
   return (
     '<EXTREMELY_IMPORTANT>\nYou have superpowers.\n\n' +
     "**Below is the full content of your 'using-superpowers' skill - your introduction " +
     "to using skills. For all other skills, use the 'skill' tool:**\n\n" +
     skillContent +
+    (mapping ? '\n\n' + mapping : '') +
     '\n</EXTREMELY_IMPORTANT>'
   );
 }
@@ -123,7 +134,16 @@ function run(ctx, config) {
     return;
   }
 
-  const full = bootstrapText(skillContent);
+  // The mapping is an addition: if it is unreadable the skill alone still
+  // bootstraps (as on harnesses whose tools match upstream's names).
+  let mapping;
+  try {
+    mapping = readFileSync(settings.mappingFile, 'utf8');
+  } catch (error) {
+    diag('tool mapping not inlined: cannot read ' + settings.mappingFile + ' (' + describe(error) + ')');
+  }
+
+  const full = bootstrapText(skillContent, mapping);
   try {
     const dispose = systemPrompt.section({
       name: SECTION_NAME,
@@ -137,7 +157,10 @@ function run(ctx, config) {
       interpolate: false
     });
     ctx.effect(() => dispose, 'superpowers-bootstrap prompt section');
-    diag('registered: ' + skillContent.length + ' chars from ' + settings.skillFile);
+    diag(
+      'registered: ' + full.length + ' chars (' + skillContent.length + ' skill + ' +
+        (mapping?.length ?? 0) + ' mapping) from ' + settings.skillFile
+    );
   } catch (error) {
     diag('not registered: section() threw (' + describe(error) + ')');
   }

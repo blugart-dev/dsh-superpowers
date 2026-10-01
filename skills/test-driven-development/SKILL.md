@@ -118,10 +118,6 @@ Vague name, tests mock not code
 npm test path/to/test.test.ts
 ```
 
-On DeepSeek Harness, run the project's real test command with the session's shell
-tool (`pwsh` on Windows) — `npm test -- path/to/test.test.ts`, or whatever this repo uses. The tool
-differs; watching it fail does not.
-
 Confirm:
 - Test fails (not errors)
 - Failure message is expected

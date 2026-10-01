@@ -19,6 +19,9 @@ for the procedure.
 | Gate `requiredSkills` | `gate-required` 3/3 |
 | Bundle composes on an installed DSH | `npm run compat`, plus the weekly `compat` workflow (latest and next) |
 | Visual-companion server starts and serves (Git Bash, outside DSH) | `server-started` JSON, HTTP 200 |
+| Upstream acceptance test ("Let's make a react todo list" → brainstorming before code) | `acceptance` 3/3 |
+| Verbatim skills: `superpowers:<name>` loads `<name>` via the mapping | `prefix` 3/3, bare name directly |
+| System prompt not repeated per step | 186-step session: one system-prompt event, bootstrap once |
 
 **Not yet verified:**
 

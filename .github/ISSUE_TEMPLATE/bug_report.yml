@@ -1,0 +1,42 @@
+name: Bug report
+description: Something in the bundle does not work as documented.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. The most useful evidence is DSH's own session log:
+        run `npm run inspect-session` from a clone of this repository and paste the output.
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: dsh-superpowers version, DSH version (`dsh --version`), OS
+      placeholder: dsh-superpowers 0.3.0, DSH 0.2.0-rc.2, Windows 11
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Skills (missing, wrong text, not loading)
+        - Bootstrap (startup text missing or duplicated)
+        - Gate (unexpected denial, cannot recover)
+        - Install / update / composition
+        - Eval harness or scripts
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: "`npm run inspect-session` output, `npm run compat` output, or the denial text. Remove anything private."
+      render: text
