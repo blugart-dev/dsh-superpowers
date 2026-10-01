@@ -14,13 +14,18 @@ for the procedure.
 | An armed gate denies, and the escape hatch recovers | `write` denied, `superpowers-workflow` loaded, retry allowed |
 
 | Skill routing for build, feature, bug, plan and done prompts, without over-triggering | `npm run eval:harness`: 3/3 per scenario (see CHANGELOG 0.2.0) |
-| Subagents get no bootstrap | `subagent` scenario: parent 1x, child 0x |
+| Subagents get no bootstrap | `subagent` scenario: parent 1x, child 0x; also confirmed in DSH Desktop |
+| Gate on resume (state rebuilt from the log) | `gate-resume` 3/3 |
+| Gate in forks | `gate-fork` 3/3, always "denied, then recovered" (forks do not inherit the current turn) |
+| Gate `requiredSkills` | `gate-required` 3/3 |
+| Bundle composes on an installed DSH | `npm run compat`, plus the weekly `compat` workflow (latest and next) |
+| Visual-companion server starts and serves (Git Bash, outside DSH) | `server-started` JSON, HTTP 200 |
 
 **Not yet verified:**
 
-- macOS and Linux.
-- Gate behaviour in forked subagents and on resume.
-- The brainstorming visual companion.
+- **Behaviour on macOS and Linux.** The `compat` workflow covers composition on
+  Linux only.
+- **Starting the visual companion as a DSH job,** and its page in a browser.
 
 A successful install proves nothing about what the model receives. Verify the
 outcome from DSH's own session log instead.

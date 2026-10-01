@@ -26,7 +26,7 @@ test('scenario ids are unique and every scenario has a prompt and a check', () =
 
 test('prompts never name a skill or Superpowers (that would steer the agent)', () => {
   const skillNames = /brainstorm|writing-plans|test-driven|systematic-debugging|verification-before|superpowers|skill/i;
-  for (const scenario of SCENARIOS.filter((s) => s.id !== 'gate-deny' && s.id !== 'subagent')) {
+  for (const scenario of SCENARIOS.filter((s) => !s.mechanics)) {
     assert.doesNotMatch(scenario.prompt, skillNames, scenario.id);
   }
 });
@@ -86,6 +86,61 @@ test('gate-steer: the escape hatch must not be loaded pre-emptively', () => {
   })).pass, false);
   // The task must be one that is written without a design-approval stop.
   assert.match(steer.prompt, /fix/i);
+});
+
+// Found in dice-lab Phase 3: asked to wrap up, the agent restated an earlier
+// "76/76 passing" instead of re-running the suite. Iron Law 3 wants fresh evidence.
+test('wrap-up: passes only if the tests are run in that session', () => {
+  const wrap = byId['wrap-up'];
+  const ran = { ...summary(), shellCommands: [{ command: 'npm test', time: 2 }] };
+  const ranNode = { ...summary(), shellCommands: [{ command: 'cd x; node --test 2>&1', time: 2 }] };
+  const restated = { ...summary(), shellCommands: [{ command: 'git status --short', time: 2 }] };
+  assert.equal(wrap.check(ran).pass, true);
+  assert.equal(wrap.check(ranNode).pass, true);
+  assert.equal(wrap.check(restated).pass, false);
+  assert.match(wrap.prompt, /already/i);
+  assert.ok(wrap.files['package.json'] && wrap.files['test/greet.test.js']);
+});
+
+test('multi-turn scenarios declare their follow-up prompts', () => {
+  for (const id of ['wrap-up-own', 'gate-resume']) {
+    assert.ok(Array.isArray(byId[id].followUps) && byId[id].followUps.length === 1, id);
+  }
+});
+
+test('wrap-up-own: the tests must run after the final user message', () => {
+  const s = (commands) => ({ ...summary(), userMessageTimes: [1, 10], shellCommands: commands });
+  assert.equal(byId['wrap-up-own'].check(s([{ command: 'npm test', time: 2 }, { command: 'npm test', time: 11 }])).pass, true);
+  assert.equal(byId['wrap-up-own'].check(s([{ command: 'npm test', time: 2 }])).pass, false);
+});
+
+test('gate-resume: the resumed write is allowed because the skill load is in the log', () => {
+  const s = (writes) => ({ ...summary({ skills: [['test-driven-development', 2]], writes }), userMessageTimes: [1, 10] });
+  assert.equal(byId['gate-resume'].check(s([['src/hello.txt', 11, false]])).pass, true);
+  assert.equal(byId['gate-resume'].check(s([['src/hello.txt', 11, true]])).pass, false);
+  assert.equal(byId['gate-resume'].check(s([])).pass, false);
+});
+
+test('gate-fork: the fork must end up writing, and the path taken is reported', () => {
+  const parent = summary({ skills: [['systematic-debugging', 1]] });
+  const allowed = summary({ writes: [['src/fork.txt', 3, false]] });
+  const recovered = summary({ skills: [['superpowers-workflow', 4]], writes: [['src/fork.txt', 3, true], ['src/fork.txt', 5, false]] });
+  const stuck = summary({ writes: [['src/fork.txt', 3, true]] });
+  assert.match(byId['gate-fork'].check(parent, [allowed]).detail, /inherited/);
+  assert.equal(byId['gate-fork'].check(parent, [recovered]).pass, true);
+  assert.match(byId['gate-fork'].check(parent, [recovered]).detail, /recovered/);
+  assert.equal(byId['gate-fork'].check(parent, [stuck]).pass, false);
+  assert.equal(byId['gate-fork'].check(parent, []).pass, false);
+});
+
+test('gate-required: a non-required skill does not unlock writes', () => {
+  const required = byId['gate-required'];
+  assert.match(required.overlay, /requiredSkills: \[test-driven-development\]/);
+  const deniedAfterBrainstorm = summary({ skills: [['brainstorming', 1]], writes: [['src/a.txt', 2, true]] });
+  const allowedAfterBrainstorm = summary({ skills: [['brainstorming', 1]], writes: [['src/a.txt', 2, false]] });
+  assert.equal(required.check(deniedAfterBrainstorm).pass, true);
+  assert.equal(required.check(allowedAfterBrainstorm).pass, false);
+  assert.equal(required.check(summary({ skills: [['brainstorming', 1]] })).pass, false);
 });
 
 test('subagent: the parent has the bootstrap and every child does not', () => {

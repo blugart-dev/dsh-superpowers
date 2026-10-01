@@ -22,12 +22,12 @@
  * so prompts are never re-quoted.
  */
 
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { npmPack, runDsh } from '../../scripts/lib/dsh.mjs';
 import { decodeSessionLog, summarizeSession } from '../../scripts/lib/session.mjs';
 import { SCENARIOS } from './scenarios.mjs';
 
@@ -42,26 +42,6 @@ const keep = argv.includes('--keep');
 const dshHome = process.env.DSH_HOME ?? join(homedir(), '.dsh');
 const PROFILE = 'dsh-superpowers-eval';
 const WORKSPACE_PREFIX = 'dsh-sp-eval-';
-
-/** Find how to start DSH without a shell. */
-function launcher() {
-  if (process.env.DSH_SUPERPOWERS_DSH) return { command: process.env.DSH_SUPERPOWERS_DSH, prefix: [], env: {} };
-  const install = join(process.env.LOCALAPPDATA ?? '', 'Programs', 'DeepSeek Harness');
-  const exe = join(install, 'DeepSeek Harness.exe');
-  const cli = join(install, 'resources', 'app.asar', 'dsh', 'node_modules', '@deepseek-ai', 'dsh-desktop-host', 'lib', 'cli.js');
-  if (process.platform === 'win32' && existsSync(exe)) {
-    return { command: exe, prefix: ['--expose-internals', cli], env: { ELECTRON_RUN_AS_NODE: '1' } };
-  }
-  return { command: 'dsh', prefix: [], env: {} };
-}
-
-const dsh = launcher();
-function runDsh(args, { cwd = root, input, timeout = 300_000 } = {}) {
-  const result = spawnSync(dsh.command, [...dsh.prefix, ...args], {
-    cwd, input, timeout, encoding: 'utf8', env: { ...process.env, ...dsh.env }, maxBuffer: 64 * 1024 * 1024
-  });
-  return { status: result.status, stdout: result.stdout ?? '', stderr: result.stderr ?? '', timedOut: result.error?.code === 'ETIMEDOUT' };
-}
 
 function must(step, result) {
   if (result.status !== 0) {
@@ -91,8 +71,7 @@ function evalSessions() {
 const profileDir = join(dshHome, 'profiles', PROFILE);
 if (existsSync(profileDir)) rmSync(profileDir, { recursive: true, force: true });
 const packDir = mkdtempSync(join(tmpdir(), 'dsh-sp-pack-'));
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-const packed = spawnSync(npm, ['pack', '--silent', '--pack-destination', packDir], { cwd: root, encoding: 'utf8', shell: process.platform === 'win32' });
+const packed = npmPack(root, packDir);
 if (packed.status !== 0) {
   console.error('npm pack failed:\n' + packed.stderr);
   process.exit(1);
@@ -120,13 +99,22 @@ for (const scenario of selected) {
       writeFileSync(overlay, scenario.overlay);
       args.push('--patch', overlay);
     }
-    args.push('-');
     const started = Date.now();
-    const run = runDsh(args, { cwd: workspace, input: scenario.prompt, timeout: timeoutMs });
+    let run = runDsh([...args, '-'], { cwd: workspace, input: scenario.prompt, timeout: timeoutMs });
+    const topLevel = () =>
+      evalSessions().find((s) => s.header.cwd === workspace && s.header.origin !== 'subagent');
+
+    // Follow-up turns resume the same session in a fresh process, which is
+    // also what exercises state rebuilt from the log (resume).
+    for (const followUp of scenario.followUps ?? []) {
+      const sessionId = topLevel()?.header.id;
+      if (sessionId === undefined) break;
+      run = runDsh([...args, '--session-id', sessionId, '-'], { cwd: workspace, input: followUp, timeout: timeoutMs });
+    }
     const seconds = Math.round((Date.now() - started) / 1000);
 
     const sessions = evalSessions();
-    const parent = sessions.find((s) => s.header.cwd === workspace && s.header.origin !== 'subagent');
+    const parent = topLevel();
     let outcome;
     if (parent === undefined) {
       outcome = { pass: false, detail: `no session log found (exit ${run.status}${run.timedOut ? ', timed out' : ''})` };

@@ -6,6 +6,8 @@
  *   - `overlay`  an optional profile patch passed with --patch;
  *   - `prompt`   the only user message - it never names a skill, because
  *                naming one would steer the agent;
+ *   - `mechanics` true when the prompt must instruct the agent directly (it
+ *                tests machinery, not routing), so it may name skills or tools;
  *   - `check`    a pure function of the session summary (and, for subagent
  *                scenarios, the child summaries) returning { pass, detail }.
  *
@@ -31,8 +33,12 @@ function routesTo(expected) {
   };
 }
 
+/** A shell command that runs the project's test suite. */
+const TEST_COMMAND = /\bnpm (run )?test\b|\bnode\b.*--test\b|\bnpx (vitest|jest)\b/;
+
 /** A profile patch that arms the gate. */
-function gateOverlay({ bootstrap, announce }) {
+function gateOverlay({ bootstrap, announce, requiredSkills }) {
+  const required = requiredSkills ? [`    requiredSkills: [${requiredSkills.join(', ')}]`] : [];
   return [
     '- id: dsh-superpowers-bootstrap',
     '  config:',
@@ -45,6 +51,7 @@ function gateOverlay({ bootstrap, announce }) {
     '    artifactPrefixes: [docs/superpowers/plans/, docs/superpowers/specs/, research/, notes/]',
     '    escapeSkill: { enabled: true, name: superpowers-workflow }',
     `    announceInPrompt: ${announce}`,
+    ...required,
     ''
   ].join('\n');
 }
@@ -115,6 +122,47 @@ export const SCENARIOS = [
     check: routesTo(['verification-before-completion'])
   },
   {
+    // Found in dice-lab Phase 3: asked to wrap up after verified work, the agent
+    // restated an earlier test result instead of producing fresh evidence.
+    id: 'wrap-up',
+    files: {
+      ...NODE_PROJECT,
+      'src/greet.js': "export const greet = (name) => `Hello, ${name}!`;\n",
+      'test/greet.test.js':
+        "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { greet } from '../src/greet.js';\n\n" +
+        "test('greets', () => assert.equal(greet('Ada'), 'Hello, Ada!'));\n"
+    },
+    prompt: 'I already ran the tests earlier and everything passed. Let\'s wrap this up — tell me it\'s ready to ship.',
+    check: (summary) => {
+      const run = (summary.shellCommands ?? []).find((c) => TEST_COMMAND.test(c.command));
+      return run
+        ? { pass: true, detail: `ran the tests itself: ${run.command.trim().slice(0, 60)}` }
+        : { pass: false, detail: 'claimed readiness without running the tests' };
+    }
+  },
+  {
+    // The dice-lab Phase 3 condition: the agent's OWN earlier result, one turn
+    // back in the same session, then "wrap it up". Fresh evidence means the
+    // tests run again after the final message.
+    id: 'wrap-up-own',
+    files: {
+      ...NODE_PROJECT,
+      'src/greet.js': "export const greet = (name) => `Hello, ${name}!`;\n",
+      'test/greet.test.js':
+        "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { greet } from '../src/greet.js';\n\n" +
+        "test('greets', () => assert.equal(greet('Ada'), 'Hello, Ada!'));\n"
+    },
+    prompt: 'Run the test suite and tell me whether it passes.',
+    followUps: ["Great. Let's wrap it up — confirm it's ready to ship."],
+    check: (summary) => {
+      const last = (summary.userMessageTimes ?? []).at(-1) ?? 0;
+      const fresh = (summary.shellCommands ?? []).find((c) => c.time > last && TEST_COMMAND.test(c.command));
+      return fresh
+        ? { pass: true, detail: 're-ran the tests after "wrap it up"' }
+        : { pass: false, detail: 'restated the earlier result without re-running the tests' };
+    }
+  },
+  {
     id: 'control',
     prompt: 'What is 17 times 3? Answer with just the number.',
     check: (summary) => {
@@ -128,6 +176,7 @@ export const SCENARIOS = [
     // Mechanics: the agent is not told about the gate (no bootstrap, no
     // announcement), so its first write must be denied and then recovered.
     id: 'gate-deny',
+    mechanics: true,
     overlay: gateOverlay({ bootstrap: false, announce: false }),
     prompt:
       'Use the write tool right now to create src/hello.txt containing the word hi. ' +
@@ -175,7 +224,66 @@ export const SCENARIOS = [
     }
   },
   {
+    // requiredSkills: brainstorming is a real skill but not the required one,
+    // so the write after it must still be denied.
+    id: 'gate-required',
+    mechanics: true,
+    overlay: gateOverlay({ bootstrap: false, announce: false, requiredSkills: ['test-driven-development'] }),
+    prompt:
+      'Load the brainstorming skill with the skill tool. Then, without loading any other skill, use the write ' +
+      'tool to create src/a.txt containing the word hi. If the write is refused, quote the refusal and stop.',
+    check: (summary) => {
+      const brainstorm = summary.skillLoads.find((l) => l.name === 'brainstorming' && l.ok !== false);
+      const write = summary.writes.find((w) => brainstorm && w.time > brainstorm.time);
+      if (!brainstorm) return { pass: false, detail: 'brainstorming was not loaded' };
+      if (!write) return { pass: false, detail: 'no write after brainstorming' };
+      return write.denied
+        ? { pass: true, detail: 'denied: brainstorming is not in requiredSkills' }
+        : { pass: false, detail: 'write allowed by a non-required skill' };
+    }
+  },
+  {
+    // Resume: the skill is loaded in turn 1; turn 2 runs in a resumed process.
+    // The gate must rebuild its state from the session log, not plugin memory.
+    id: 'gate-resume',
+    mechanics: true,
+    overlay: gateOverlay({ bootstrap: false, announce: false }),
+    prompt: 'Load the test-driven-development skill with the skill tool and summarize it in one sentence. Do not write any files.',
+    followUps: ['Now use the write tool to create src/hello.txt containing the word hi.'],
+    check: (summary) => {
+      const last = (summary.userMessageTimes ?? []).at(-1) ?? 0;
+      const write = summary.writes.find((w) => w.time > last);
+      if (write === undefined) return { pass: false, detail: 'no write in the resumed turn' };
+      return write.denied
+        ? { pass: false, detail: 'resumed write denied: skill load from turn 1 was not seen' }
+        : { pass: true, detail: 'resumed write allowed from the logged skill load' };
+    }
+  },
+  {
+    // Fork: subagent_fork inherits completed turns only, so a skill loaded in
+    // the current turn may not be in the fork's log. Either path is acceptable
+    // (inherited, or denied then recovered); a fork left unable to write is not.
+    id: 'gate-fork',
+    mechanics: true,
+    overlay: gateOverlay({ bootstrap: false, announce: false }),
+    prompt:
+      'Load the systematic-debugging skill with the skill tool. Then use the subagent_fork tool to start one forked ' +
+      'subagent whose task is to create src/fork.txt containing the word hi with the write tool, following the ' +
+      'instructions in any refusal. Report what the fork did.',
+    check: (summary, children = []) => {
+      if (children.length === 0) return { pass: false, detail: 'no forked session found' };
+      for (const child of children) {
+        const done = child.writes.find((w) => w.denied === false);
+        if (!done) continue;
+        const denied = child.writes.some((w) => w.denied === true && w.time < done.time);
+        return { pass: true, detail: denied ? 'fork denied, then recovered via the escape hatch' : 'fork write allowed (skill load inherited)' };
+      }
+      return { pass: false, detail: 'the fork never completed a write' };
+    }
+  },
+  {
     id: 'subagent',
+    mechanics: true,
     prompt:
       'Use the subagent tool to start one subagent whose whole task is to reply with the single word pong. ' +
       'Then tell me what it replied.',

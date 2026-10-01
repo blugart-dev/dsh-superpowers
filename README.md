@@ -1,5 +1,7 @@
 # dsh-superpowers
 
+English | [中文](README.zh.md)
+
 [Superpowers](https://github.com/obra/superpowers) for
 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH):
 Jesse Vincent's skill library for disciplined agentic development (brainstorming,
@@ -43,7 +45,7 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v0.2.0`.
+`github:blugart-dev/dsh-superpowers#v0.3.0`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
@@ -97,16 +99,19 @@ restate every field you need:
     artifactPrefixes: [docs/superpowers/plans/, docs/superpowers/specs/, research/, notes/]
     escapeSkill: { enabled: true, name: superpowers-workflow }
     announceInPrompt: true
+    requiredSkills: []   # e.g. [test-driven-development, systematic-debugging]
 ```
 
-A blocked session is told exactly how to recover: load
-`skill {"name": "superpowers-workflow"}`. The gate also refuses to arm if that
-escape hatch does not resolve.
-
-Know its limits before you rely on it:
-
-- It checks that *a* skill was loaded, not which one.
-- It does not cover shell commands.
+- **`requiredSkills`** narrows which skills unlock writes. The default empty list
+  means any skill unlocks them. The escape hatch always unlocks, so a configured
+  gate can never lock a session out.
+- **Recovery.** A blocked session is told exactly how to recover: load
+  `skill {"name": "superpowers-workflow"}`. Only the denial message names that
+  skill. The announcement and the skill catalog deliberately don't, because when
+  they did, agents loaded it as a ritual instead of a real skill.
+- **Arming.** The gate refuses to arm if its escape hatch does not resolve.
+- **Limits.** The gate cannot see shell writes, and its behaviour in forked
+  subagents depends on what the fork inherits (see docs/VERIFYING.md).
 
 Every row also accepts `diagnosticsLog: <absolute path>`. Each activation decision
 is then appended to that file, which is useful when a row seems inactive.
@@ -142,6 +147,8 @@ Requires Node ≥ 23.6 and git.
 
 ```
 npm run verify        # sync:check + contract checks + tests
+npm run compat        # does the bundle compose on the installed DSH? (no model calls)
+npm run eval:harness  # behavioural tests in real headless sessions (spends tokens)
 ```
 
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to edit a skill, upgrade upstream, and

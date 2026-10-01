@@ -25,6 +25,7 @@ const SKILL_TOOL = 'skill';
  * @typedef {object} SkillLoadState
  * @property {boolean} skillsLoaded - true once a skill load has succeeded.
  * @property {string | undefined} loadedSkill - the name of the first skill loaded.
+ * @property {string[]} loadedSkills - every successfully loaded skill, once, in order.
  * @property {Record<string, string>} pending - skill names awaiting their result.
  */
 
@@ -32,7 +33,7 @@ const SKILL_TOOL = 'skill';
  * @returns {SkillLoadState} a fresh, plain-JSON fold state.
  */
 export function initSkillLoadState() {
-  return { skillsLoaded: false, loadedSkill: undefined, pending: {} };
+  return { skillsLoaded: false, loadedSkill: undefined, loadedSkills: [], pending: {} };
 }
 
 /**
@@ -81,7 +82,9 @@ export function foldSkillLoads(state, event) {
     if (message.isError === true) return { ...state, pending };
 
     const loadedSkill = state.loadedSkill ?? requested;
-    return { ...state, skillsLoaded: true, loadedSkill, pending };
+    const previous = state.loadedSkills ?? [];
+    const loadedSkills = previous.includes(requested) ? previous : [...previous, requested];
+    return { ...state, skillsLoaded: true, loadedSkill, loadedSkills, pending };
   }
 
   return state;
@@ -135,6 +138,25 @@ export function skillNameArgument(rawArguments) {
  */
 export function isSkillLoaded(state) {
   return state !== undefined && state.skillsLoaded === true;
+}
+
+/**
+ * Whether a folded state clears the gate under a `requiredSkills` policy.
+ *
+ * An empty list keeps the original rule: any loaded skill clears it. A non-empty
+ * list narrows it to those skills. The escape hatch always clears it, so a
+ * configured gate can never leave a session with no way forward.
+ *
+ * @param {SkillLoadState | undefined} state - folded state, if any.
+ * @param {readonly string[]} requiredSkills - skills that clear the gate; empty = any.
+ * @param {string} escapeSkillName - the gate's own recovery skill.
+ * @returns {boolean} true when this session may write.
+ */
+export function satisfiesGate(state, requiredSkills, escapeSkillName) {
+  if (!isSkillLoaded(state)) return false;
+  if (requiredSkills.length === 0) return true;
+  const loaded = state.loadedSkills ?? [];
+  return loaded.includes(escapeSkillName) || loaded.some((name) => requiredSkills.includes(name));
 }
 
 /**

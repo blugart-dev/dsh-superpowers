@@ -104,16 +104,25 @@ export function extractFilePath(rawArguments) {
  * @param {string | undefined} input.filePath - its target path.
  * @param {string} input.skillName - the registered skill that clears the gate.
  * @param {boolean} input.selfRegistered - whether that skill comes from this plugin.
+ * @param {readonly string[]} [input.requiredSkills] - skills that clear the gate; empty = any.
  * @returns {string} the denial reason returned from the guard.
  */
-export function denialMessage({ toolName, filePath, skillName, selfRegistered }) {
+export function denialMessage({ toolName, filePath, skillName, selfRegistered, requiredSkills = [] }) {
   const target = filePath === undefined ? '(unresolved path)' : filePath;
   const lines = [
     `Superpowers workflow gate: "${toolName}" on ${target} is blocked until this session has loaded a skill.`,
     '',
-    `Do this now: call the \`skill\` tool with {"name": "${skillName}"}, then retry the write.`,
-    'That call is the only thing that clears the gate for the rest of this session.'
+    `Do this now: call the \`skill\` tool with {"name": "${skillName}"}, then retry the write.`
   ];
+  if (requiredSkills.length === 0) {
+    lines.push('That call is the only thing that clears the gate for the rest of this session.');
+  } else {
+    lines.push(
+      '',
+      `This project requires one of: ${requiredSkills.join(', ')}. Loading the one that fits your`,
+      'task also clears the gate, and is the better path when you can.'
+    );
+  }
   if (selfRegistered) {
     lines.push(
       '',
@@ -189,6 +198,7 @@ export function resolveArming({ gateRequested, escapeHatchEnabled, escapeHatchRe
  * @param {boolean} input.artifactsWritable - whether artifacts are exempt at all.
  * @param {string} input.skillName - the skill the denial message should name.
  * @param {boolean} input.selfRegistered - disclose plugin-registered provenance.
+ * @param {readonly string[]} [input.requiredSkills] - named in the denial when set.
  * @returns {{ allowed: true } | { allowed: false, message: string }} the verdict.
  */
 export function decide(input) {
@@ -207,7 +217,8 @@ export function decide(input) {
       toolName,
       filePath,
       skillName: input.skillName,
-      selfRegistered: input.selfRegistered
+      selfRegistered: input.selfRegistered,
+      requiredSkills: input.requiredSkills ?? []
     })
   };
 }

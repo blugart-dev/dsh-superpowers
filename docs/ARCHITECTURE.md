@@ -68,13 +68,22 @@ DSH profile
     `gate: false`.
   - **No soft-lock.** It registers its own escape-hatch skill
     (`superpowers-workflow`) and refuses to arm unless that skill resolves
-    through the registry.
-  - **State comes from the session log, not plugin memory.** A fork or a resume
-    therefore derives the same answer. Fork inheritance has not been verified
-    live.
+    through the registry. The escape hatch always unlocks, even under
+    `requiredSkills`.
+  - **The escape hatch is a recovery path, not an invitation.** Only the denial
+    message names it. The announcement and the catalog description steer the
+    agent to the skill for its task. When they advertised the escape hatch,
+    agents loaded it as a ritual (3/3 in an A/B test; 0/3 after the change).
+  - **State comes from the session log, not plugin memory.** A resumed session
+    therefore derives the same answer: the `gate-resume` harness scenario passes
+    3/3.
+  - **`requiredSkills`** (default `[]`, meaning any skill) narrows which loaded
+    skills unlock writes. The reader records every successful load, in order.
 - **Known limits.**
   - It cannot see shell writes.
-  - Any loaded skill unlocks it.
+  - Forks inherit only completed turns, so a skill loaded earlier in the same
+    turn may not be in the fork's log. The `gate-fork` scenario records which
+    path a fork takes.
   - In live testing, the plugin was mounted in more than one Host scope per
     activation, and only the scope with a skill registry armed.
 

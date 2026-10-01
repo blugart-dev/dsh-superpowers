@@ -1,0 +1,31 @@
+name: compat
+
+# Does the bundle still compose on current and upcoming DSH releases?
+# Installs the DSH CLI from npm and runs `npm run compat` (no model calls, no
+# credentials): a headless profile in an isolated DSH home, the packed bundle
+# installed, and its three rows checked in the composed profile.
+
+on:
+  schedule:
+    - cron: '41 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  compose:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        dsh: [latest, next]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install DSH CLI (${{ matrix.dsh }}) and pnpm
+        run: npm install --global "@deepseek-ai/dsh@${{ matrix.dsh }}" pnpm
+      - name: Compose check
+        env:
+          DSH_SUPERPOWERS_DSH: dsh
+        run: npm run compat

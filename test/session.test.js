@@ -55,5 +55,6 @@ test('summarizes bootstrap presence, skill loads and writes', () => {
   assert.equal(summary.firstSkillLoadTime, 1003);
   assert.equal(summary.firstWriteTime, 1005);
   assert.equal(summary.userMessages, 1);
+  assert.deepEqual(summary.userMessageTimes, [1002]);
   assert.equal(summary.turns, 1);
 });

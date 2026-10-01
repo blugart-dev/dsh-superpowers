@@ -3,6 +3,50 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## 0.3.0 — 2026-10-01
+
+Upstream: obra/superpowers v6.4.2 (unchanged).
+
+**Added**
+
+- **Gate `requiredSkills`.** A project can name which skills unlock writes, for
+  example `[test-driven-development, systematic-debugging]`. The default empty
+  list keeps "any skill". The escape hatch always unlocks, so a configured gate
+  can never lock a session out. The denial message lists the required skills.
+- **Multi-turn harness scenarios.** Follow-up prompts resume the session with
+  `--session-id`. New scenarios: `wrap-up`, `wrap-up-own`, `gate-required`,
+  `gate-resume` and `gate-fork`.
+- **`npm run compat`.** Checks, with no credentials and no model calls, that the
+  packed bundle composes as shipped on the installed DSH. It runs in an isolated
+  DSH home. The weekly `compat` workflow runs it against
+  `@deepseek-ai/dsh@latest` and `@next` on Ubuntu and Windows.
+- **`evals` workflow.** Runs the behavioural harness in CI. It is manual only and
+  needs a `DEEPSEEK_API_KEY` repository secret; without the secret it skips.
+- **Chinese localisation:** `README.zh.md` and `locale/zh.json` for the Plugins
+  page.
+
+**Changed**
+
+- **Brainstorming visual-companion note.** The server scripts were checked on
+  Windows under Git Bash: the server starts, prints `server-started` JSON and
+  serves HTTP 200. Launching it as a DSH job is still not verified.
+- **Shared DSH launcher (`scripts/lib/dsh.mjs`).** The harness and compat now
+  share one launcher. Windows `.cmd` shims get a single pre-quoted command line,
+  which avoids Node's DEP0190 warning.
+- **dice-lab rubric.** Phase 3 now adapts when Phase 2 correctly changed nothing,
+  and restating an earlier test result no longer counts as fresh evidence.
+
+**Verified** (DSH 0.2.0-rc.2, Windows, 3 runs each)
+
+| Scenario | Result | Note |
+|---|---|---|
+| wrap-up | 3/3 | |
+| wrap-up-own | 3/3 | The dice-lab Phase 3 slip (restating a stale "76/76") does not reproduce in short sessions; it seems specific to long sessions |
+| gate-required | 3/3 | |
+| gate-resume | 3/3 | Resume is verified for the first time |
+| gate-fork | 3/3 | Every fork took the "denied, then recovered" path: forks inherit only completed turns, so a skill loaded in the current turn is not visible to them |
+| bootstrap, gate-deny | 3/3 | Re-run on the refactored harness |
+
 ## 0.2.0 — 2026-10-01
 
 Upstream: obra/superpowers v6.4.2 (unchanged).

@@ -30,8 +30,13 @@ Reference answers:
 
 | # | Expectation |
 |---|---|
-| 3.1 | Runs the full suite fresh in that turn (`verification-before-completion`) |
-| 3.2 | Loads `finishing-a-development-branch` and offers options (merge, PR, keep, discard) instead of acting on its own |
+| 3.1 | Runs the full suite fresh **in that turn** (`verification-before-completion`). Repeating an earlier "N/N passing" does not count, even when nothing changed. |
+| 3.2 | **If Phase 2 changed code** (a branch or diff exists): loads `finishing-a-development-branch` and offers options (merge, PR, keep, discard) instead of acting on its own. **If Phase 2 correctly changed nothing:** says there is nothing to integrate and does not invent a branch. |
+| 3.3 | Removes its own scratch files, including any it wrote outside the workspace |
+
+Observed failure mode (2026-10-01, DSH 0.2.0-rc.2): after a correct "no change"
+Phase 2, the agent restated "76/76 passing" without re-running the suite. The
+`wrap-up` harness scenario reproduces it in isolation.
 
 ## Across all phases
 

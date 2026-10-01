@@ -1,0 +1,53 @@
+name: evals
+
+# Behavioural harness against real model sessions. Manual only: every run
+# spends DeepSeek API tokens. Requires a repository secret DEEPSEEK_API_KEY
+# (Settings > Secrets and variables > Actions); without it the job skips.
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: Comma-separated scenario ids (empty = all)
+        required: false
+        default: ''
+      repeat:
+        description: Runs per scenario
+        required: false
+        default: '1'
+      dsh:
+        description: DSH CLI version from npm
+        required: false
+        default: latest
+
+jobs:
+  harness:
+    runs-on: ubuntu-latest
+    env:
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DSH_SUPERPOWERS_DSH: dsh
+    steps:
+      - name: Require the API key secret
+        if: env.DEEPSEEK_API_KEY == ''
+        run: echo "::warning::DEEPSEEK_API_KEY secret is not set; skipping." && exit 0
+      - uses: actions/checkout@v5
+        if: env.DEEPSEEK_API_KEY != ''
+      - uses: actions/setup-node@v5
+        if: env.DEEPSEEK_API_KEY != ''
+        with:
+          node-version: 24
+      - name: Install DSH CLI and pnpm
+        if: env.DEEPSEEK_API_KEY != ''
+        run: npm install --global "@deepseek-ai/dsh@${{ inputs.dsh }}" pnpm
+      - name: Run the harness
+        if: env.DEEPSEEK_API_KEY != ''
+        run: |
+          args="--repeat ${{ inputs.repeat }}"
+          if [ -n "${{ inputs.only }}" ]; then args="$args --only ${{ inputs.only }}"; fi
+          npm run eval:harness -- $args
+      - name: Upload report
+        if: always() && env.DEEPSEEK_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-harness-report
+          path: .cache/eval-harness/

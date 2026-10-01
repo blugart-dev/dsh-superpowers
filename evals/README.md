@@ -29,15 +29,25 @@ each one from its session log. It works like upstream's `claude -p` suite:
 ```
 npm run eval:harness                                   # every scenario once
 npm run eval:harness -- --repeat 3                     # pass rates
-npm run eval:harness -- --only gate,subagent --keep    # keep artifacts for inspection
+npm run eval:harness -- --only gate-deny,subagent --keep  # keep artifacts for inspection
 ```
+
+Scenarios can span several turns: each `followUps` prompt resumes the same
+session with `--session-id` in a fresh process. "Mechanics" scenarios instruct
+the agent directly, because they test machinery rather than routing.
 
 | Scenario | Pass when |
 |---|---|
 | `bootstrap` | the bootstrap is in the system prompt exactly once |
 | `route-build`, `route-feature`, `route-bug`, `route-plan`, `route-done` | the expected skill is the first one loaded, before any write |
+| `wrap-up` | told "I already ran the tests", the agent runs them itself before calling the work ready |
+| `wrap-up-own` | two turns. After its *own* earlier test run, "wrap it up" still makes it re-run the tests |
 | `control` | a trivial question loads no methodology skill |
-| `gate` | with the gate armed: write denied, then `superpowers-workflow` loaded, then write allowed |
+| `gate-deny` | gate armed, with no announcement: write denied, then `superpowers-workflow` loaded, then write allowed |
+| `gate-steer` | gate armed, with bootstrap and announcement on: a real skill comes before the first write, and the escape hatch is never loaded as a ritual |
+| `gate-required` | with `requiredSkills: [test-driven-development]`, a write after loading only `brainstorming` is denied |
+| `gate-resume` | the skill is loaded in turn 1, and the write in resumed turn 2 is allowed, so state is rebuilt from the log |
+| `gate-fork` | a forked subagent ends up writing, either through inherited state or by being denied and then recovering |
 | `subagent` | the parent has the bootstrap and the subagent does not |
 
 **Costs.** It uses your DSH credentials and costs real tokens. Each session is

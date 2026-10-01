@@ -113,6 +113,7 @@ export function summarizeSession(events) {
     firstSkillLoadTime: skillLoads[0]?.time,
     firstWriteTime: writes[0]?.time,
     userMessages: events.filter((e) => e.type === 'user/message' && e.data?.source?.kind === 'user').length,
+    userMessageTimes: events.filter((e) => e.type === 'user/message' && e.data?.source?.kind === 'user').map((e) => e.time),
     turns: events.filter((e) => e.type === 'turn/end').length
   };
 }

@@ -29,7 +29,7 @@
  */
 
 import { DEFAULT_ARTIFACT_PREFIXES, decide, normalizePath, resolveArming } from './policy.js';
-import { SkillLoadCache, isSkillLoaded } from './session-fold.js';
+import { SkillLoadCache, isSkillLoaded, satisfiesGate } from './session-fold.js';
 import {
   ESCAPE_SKILL_CONTENT,
   ESCAPE_SKILL_DESCRIPTION,
@@ -72,6 +72,7 @@ const PROMPT_SECTION_ORDER = 500;
  * @property {boolean} [announceInPrompt] publish a durable prompt section.
  * @property {boolean} [verbose] log the arming decision and every denial.
  * @property {string} [diagnosticsLog] absolute path for an activation log; off by default.
+ * @property {string[]} [requiredSkills] skills that clear the gate; empty (default) = any skill.
  */
 
 /**
@@ -99,6 +100,9 @@ function resolveSettings(config) {
     },
     announceInPrompt: raw.announceInPrompt !== false,
     verbose: raw.verbose === true,
+    requiredSkills: Array.isArray(raw.requiredSkills)
+      ? raw.requiredSkills.filter((name) => typeof name === 'string' && name.length > 0)
+      : [],
     diagnosticsLog: typeof raw.diagnosticsLog === 'string' ? raw.diagnosticsLog : undefined
   };
 }
@@ -205,11 +209,12 @@ function run(ctx, config) {
       toolName: execution.name,
       rawArguments: execution.arguments,
       gateEnabled: true,
-      skillLoaded: isSkillLoaded(cache.stateFor(session)),
+      skillLoaded: satisfiesGate(cache.stateFor(session), settings.requiredSkills, settings.escapeSkill.name),
       artifactPrefixes: settings.artifactPrefixes,
       artifactsWritable: settings.artifactsWritable,
       skillName: settings.escapeSkill.name,
-      selfRegistered: true
+      selfRegistered: true,
+      requiredSkills: settings.requiredSkills
     });
 
     if (verdict.allowed) return undefined;
