@@ -53,6 +53,12 @@ export function scoreBuildPhase(events) {
   const firstSource = code.find((c) => !TEST_FILE.test(pathOf(c)))?.time ?? Infinity;
   const skillAt = (name) => calls.find((c) => c.name === 'skill' && c.args.name === name)?.time ?? Infinity;
   const testRuns = calls.filter((c) => ['pwsh', 'bash', 'shell'].includes(c.name) && TEST_COMMAND.test(String(c.args.command ?? '')));
+  // DSH commits a failing shell command with isError=false; the failure is only
+  // visible as "[exit code: N]" (or the runner's own fail count) in the output.
+  const failed = (c) => {
+    const text = (c.result?.content ?? []).map((part) => part?.text ?? '').join('');
+    return c.result?.isError === true || /\[exit code: [1-9]\d*\]/.test(text) || /ℹ fail [1-9]/.test(text);
+  };
 
   return {
     skills: calls.filter((c) => c.name === 'skill').map((c) => c.args.name),
@@ -61,7 +67,7 @@ export function scoreBuildPhase(events) {
     plannedBeforeCode: skillAt('writing-plans') < firstCode,
     testWrittenBeforeSource: firstTest < firstSource,
     // A red run: a test command that failed before any non-test source existed.
-    failingRunBeforeSource: testRuns.some((c) => c.time < firstSource && c.result?.isError === true),
+    failingRunBeforeSource: testRuns.some((c) => c.time < firstSource && failed(c)),
     testRuns: testRuns.length,
     codeWrites: code.length
   };

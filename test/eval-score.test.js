@@ -30,6 +30,21 @@ test('a disciplined run: brainstorm, ask, plan, then test before source', () => 
   assert.equal(score.testRuns, 2);
 });
 
+// Observed in a real DSH session: a failing `node --test` run commits with
+// isError=false; the failure is only in the output text.
+test('a failing run is detected from the exit code in the output, not isError', () => {
+  const failing = { type: 'tool/result', time: 2.5, data: { message: {
+    toolCallId: 'c2', isError: false,
+    content: [{ type: 'text', text: 'ℹ tests 3\nℹ pass 2\nℹ fail 1\n[exit code: 1]' }]
+  } } };
+  const events = session([
+    [call(1, 'write', { file_path: 'test/rational.test.js' }), result(1)],
+    [call(2, 'pwsh', { command: 'node --test test/rational.test.js' }), failing],
+    [call(3, 'write', { file_path: 'src/rational.js' }), result(3)]
+  ]);
+  assert.equal(scoreBuildPhase(events).failingRunBeforeSource, true);
+});
+
 test('a careless run: source first, no plan', () => {
   const events = session([
     [call(1, 'write', { file_path: 'src/dice.js' }), result(1)],
