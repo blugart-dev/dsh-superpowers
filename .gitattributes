@@ -1,0 +1,5 @@
+# Byte fidelity: vendored skills and overlays must be identical on every OS.
+# Without this, core.autocrlf=true (the Windows default) rewrites skills/ to
+# CRLF on checkout and `npm run sync:check` fails on a clean clone.
+* text=auto eol=lf
+*.png binary

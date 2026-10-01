@@ -1,0 +1,42 @@
+# dsh-superpowers: Superpowers (obra/superpowers) for DeepSeek Harness.
+#
+# Three plugin rows, each independently switchable from the Plugins page or with
+#   plugin_manager { action: set_plugin, target: <id>, enabled: true|false }
+#
+#   dsh-superpowers-skills     serves the skills shipped in ./skills       (on)
+#   dsh-superpowers-bootstrap  injects using-superpowers at session start  (on)
+#   dsh-superpowers-gate       denies write/edit until a skill is loaded   (off)
+#
+# Row names are paths relative to this file, so they keep resolving if the
+# package is renamed or installed from a different source.
+#
+# Overriding a row's `config` replaces it wholesale (no deep merge): restate
+# every field you want to keep.
+- insert:
+    - id: dsh-superpowers-skills
+      name: ./src/skills.js
+
+    - id: dsh-superpowers-bootstrap
+      name: ./src/bootstrap.js
+      config:
+        bootstrap: true
+
+    # Not part of upstream Superpowers. Ships disabled twice over: the row is
+    # disabled, and `gate: false` keeps an enabled row observe-only. To arm it,
+    # enable the row AND override its config with `gate: true`.
+    - id: dsh-superpowers-gate
+      name: ./src/gate/index.js
+      disabled: true
+      config:
+        gate: false
+        artifactsWritable: true
+        artifactPrefixes:
+          - docs/superpowers/plans/
+          - docs/superpowers/specs/
+          - research/
+          - notes/
+        escapeSkill:
+          enabled: true
+          name: superpowers-workflow
+        announceInPrompt: true
+        verbose: false

@@ -1,0 +1,67 @@
+{
+  "name": "@blugart-dev/dsh-superpowers",
+  "version": "0.1.0",
+  "description": "Superpowers (obra/superpowers v6.4.2) for DeepSeek Harness: the full skill library, the session-start bootstrap, and an optional workflow gate.",
+  "type": "module",
+  "license": "MIT",
+  "author": "blugart-dev",
+  "icon": "./icon.svg",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "superpowers",
+    "skills",
+    "tdd",
+    "agentic-workflow"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/blugart-dev/dsh-superpowers.git"
+  },
+  "exports": {
+    "./skills": "./src/skills.js",
+    "./bootstrap": "./src/bootstrap.js",
+    "./gate": "./src/gate/index.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "files": [
+    "src/",
+    "skills/",
+    "cordis.patch.yml",
+    "locale/",
+    "icon.svg",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "LICENSE.superpowers"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-skill": ">=0.2.0-rc.2",
+    "@deepseek-ai/dsh-system-prompt": ">=0.2.0-rc.2",
+    "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-skill": { "optional": true },
+    "@deepseek-ai/dsh-system-prompt": { "optional": true },
+    "@deepseek-ai/dsh-tools": { "optional": true }
+  },
+  "engines": {
+    "node": ">=23.6"
+  },
+  "scripts": {
+    "test": "node --test --test-isolation=none \"test/**/*.test.js\"",
+    "sync": "node scripts/sync.mjs",
+    "sync:check": "node scripts/sync.mjs --check",
+    "overlays": "node scripts/overlays.mjs",
+    "check": "node scripts/check.mjs",
+    "inspect-session": "node scripts/inspect-session.mjs",
+    "verify": "npm run sync:check && npm run check && npm test"
+  }
+}

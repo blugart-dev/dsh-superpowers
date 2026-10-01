@@ -1,0 +1,28 @@
+diff --git a/skills/dispatching-parallel-agents/SKILL.md b/skills/dispatching-parallel-agents/SKILL.md
+index 3fa091b..79c4b1d 100644
+--- a/skills/dispatching-parallel-agents/SKILL.md
++++ b/skills/dispatching-parallel-agents/SKILL.md
+@@ -112,6 +112,23 @@ Do NOT just increase timeouts - find the real issue.
+ Return: Summary of what you found and what you fixed.
+ ```
+ 
++## DeepSeek Harness notes
++
++- **Parallelism comes from batching, not from a flag.** Issue every independent
++  dispatch **in the same message**; they run concurrently. One dispatch per message
++  runs them sequentially and defeats the whole pattern.
++- **Depth is 1 and enforced.** These workers cannot spawn subagents. Keep each
++  job self-contained — a nested dispatch fails with "subagent depth 2 exceeds
++  maxDepth 1".
++- **Hand artifacts over as files.** Everything pasted into a dispatch prompt stays
++  in your context and is re-read on every later turn. Write the brief to a file and
++  pass the path.
++- **Get each worker's report as its return value**, not as pasted console output.
++  Then verify by inspecting the files it changed — a summary is a claim, not
++  evidence.
++- Dispatch with `subagent`; use `subagent_fork` only when a worker genuinely needs
++  this conversation's prior turns.
++
+ ## Common Mistakes
+ 
+ **❌ Too broad:** "Fix all the tests" - agent gets lost

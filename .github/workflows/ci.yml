@@ -1,0 +1,26 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows matters: it is where core.autocrlf would break byte fidelity.
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: skills/ matches pin + overlays (fetches upstream, verifies blob hashes)
+        run: npm run sync:check
+      - name: bundle contract
+        run: npm run check
+      - name: unit tests
+        run: npm test
