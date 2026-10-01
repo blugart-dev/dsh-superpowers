@@ -13,6 +13,9 @@ for the procedure.
 | Skills are served from the package | the `Base directory` points into the installed package |
 | An armed gate denies, and the escape hatch recovers | `write` denied, `superpowers-workflow` loaded, retry allowed |
 
+| Skill routing for build, feature, bug, plan and done prompts, without over-triggering | `npm run eval:harness`: 3/3 per scenario (see CHANGELOG 0.2.0) |
+| Subagents get no bootstrap | `subagent` scenario: parent 1x, child 0x |
+
 **Not yet verified:**
 
 - macOS and Linux.

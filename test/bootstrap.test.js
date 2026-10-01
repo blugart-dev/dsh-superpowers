@@ -76,7 +76,33 @@ test('an active bootstrap registers the vendored using-superpowers skill as one 
   // prompt assembly for every session, so the skill text must never be
   // interpolated, whatever it contains.
   assert.equal(section.interpolate, false);
-  assert.equal(section.text, bootstrapText(readFileSync(VENDORED_SKILL, 'utf8')));
+  // Resolved per assembly: a top-level session gets the full bootstrap.
+  assert.equal(typeof section.text, 'function');
+  assert.equal(section.text({}), bootstrapText(readFileSync(VENDORED_SKILL, 'utf8')));
+});
+
+const atDepth = (delegationDepth) => ({ agent: { session: { header: { delegationDepth } } } });
+
+// Upstream's SessionStart hook does not fire for subagents; on DSH a section
+// reaches every agent's prompt, so subagents opt out (observed live: ~5 KB per
+// subagent otherwise). An empty section is dropped by the renderer.
+test('subagent sessions get no bootstrap; top-level and unknown sessions do', () => {
+  const { context, calls } = stubContext();
+  apply(context, {});
+  const { text } = calls.sections[0];
+  const full = bootstrapText(readFileSync(VENDORED_SKILL, 'utf8'));
+  assert.equal(text(atDepth(1)), '');
+  assert.equal(text(atDepth(2)), '');
+  assert.equal(text(atDepth(0)), full);
+  assert.equal(text(undefined), full);
+  assert.equal(text({ agent: { session: { header: { origin: 'subagent' } } } }), '');
+});
+
+test('subagents: true keeps the bootstrap in subagent prompts', () => {
+  const { context, calls } = stubContext();
+  apply(context, { subagents: true });
+  assert.equal(calls.sections[0].text(atDepth(1)).length > 0, true);
+  assert.equal(resolveSettings(undefined).subagents, false);
 });
 
 test('the section is disposed with the plugin', () => {

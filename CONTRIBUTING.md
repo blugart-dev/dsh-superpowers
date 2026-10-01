@@ -21,13 +21,12 @@
 
 ## Upgrade upstream
 
-1. Update `upstream/pin.json`. Set `commit` and `version`, then list every
-   `skills/**` file and `LICENSE` with its git blob SHA from the new commit's tree:
+A weekly GitHub Action (`.github/workflows/upstream.yml`) opens this pull request
+for you when obra/superpowers publishes a release. To do it by hand:
 
-   ```
-   gh api "repos/obra/superpowers/git/trees/<commit>?recursive=1"
-   ```
-
+1. Run `node scripts/bump-upstream.mjs --latest`, or pass a tag, branch or commit.
+   This rewrites `upstream/pin.json` from GitHub's tree for that commit.
+   `--check` only reports whether a newer release exists.
 2. Run `npm run sync`. If an overlay no longer applies, the build fails and names
    the file and hunk. Re-apply that note by hand in `skills/`, then run
    `npm run overlays`.

@@ -44,13 +44,14 @@ const DEFAULT_SKILL_FILE = fileURLToPath(new URL('../skills/using-superpowers/SK
  * Apply defaults to a row config. `config` is replaced wholesale on override, so
  * every field defaults here and unknown keys are ignored.
  *
- * @param {{ bootstrap?: boolean, skillFile?: string, diagnosticsLog?: string }} [config]
- * @returns {{ bootstrap: boolean, skillFile: string, diagnosticsLog: string | undefined }}
+ * @param {{ bootstrap?: boolean, subagents?: boolean, skillFile?: string, diagnosticsLog?: string }} [config]
+ * @returns {{ bootstrap: boolean, subagents: boolean, skillFile: string, diagnosticsLog: string | undefined }}
  */
 export function resolveSettings(config) {
   const raw = config ?? {};
   return {
     bootstrap: raw.bootstrap !== false,
+    subagents: raw.subagents === true,
     skillFile: raw.skillFile ?? DEFAULT_SKILL_FILE,
     diagnosticsLog: typeof raw.diagnosticsLog === 'string' ? raw.diagnosticsLog : undefined
   };
@@ -70,6 +71,22 @@ export function bootstrapText(skillContent) {
     skillContent +
     '\n</EXTREMELY_IMPORTANT>'
   );
+}
+
+/**
+ * Whether a prompt assembly is for a delegated (subagent) session.
+ *
+ * Read the way DSH's own `cwd` variable reads its agent:
+ * `context.agent.session.header`. An assembly with no agent is treated as
+ * top-level, so an unexpected context shape errs toward upstream's behaviour of
+ * showing the bootstrap.
+ *
+ * @param {unknown} context - the assembly context DSH passes to section text.
+ * @returns {boolean}
+ */
+function isSubagentAssembly(context) {
+  const header = context?.agent?.session?.header;
+  return (header?.delegationDepth ?? 0) > 0 || header?.origin === 'subagent';
 }
 
 /**
@@ -106,11 +123,15 @@ function run(ctx, config) {
     return;
   }
 
+  const full = bootstrapText(skillContent);
   try {
     const dispose = systemPrompt.section({
       name: SECTION_NAME,
       order: SECTION_ORDER,
-      text: bootstrapText(skillContent),
+      // Resolved per assembly. Upstream's SessionStart hook never reaches
+      // subagents; a section reaches every agent, so subagents get an empty
+      // section (dropped by the renderer) unless `subagents: true`.
+      text: (context) => (!settings.subagents && isSubagentAssembly(context) ? '' : full),
       // The renderer throws on unknown {{...}} references, and that throw would
       // fail prompt assembly for every session. Skill text is always literal.
       interpolate: false

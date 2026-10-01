@@ -1,6 +1,6 @@
 {
   "name": "@blugart-dev/dsh-superpowers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Superpowers (obra/superpowers v6.4.2) for DeepSeek Harness: the full skill library, the session-start bootstrap, and an optional workflow gate.",
   "type": "module",
   "license": "MIT",
@@ -48,9 +48,15 @@
     "@deepseek-ai/dsh-tools": ">=0.2.0-rc.2"
   },
   "peerDependenciesMeta": {
-    "@deepseek-ai/dsh-skill": { "optional": true },
-    "@deepseek-ai/dsh-system-prompt": { "optional": true },
-    "@deepseek-ai/dsh-tools": { "optional": true }
+    "@deepseek-ai/dsh-skill": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-system-prompt": {
+      "optional": true
+    },
+    "@deepseek-ai/dsh-tools": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=23.6"
@@ -62,6 +68,7 @@
     "overlays": "node scripts/overlays.mjs",
     "check": "node scripts/check.mjs",
     "inspect-session": "node scripts/inspect-session.mjs",
-    "verify": "npm run sync:check && npm run check && npm test"
+    "verify": "npm run sync:check && npm run check && npm test",
+    "eval:harness": "node evals/harness/run.mjs"
   }
 }

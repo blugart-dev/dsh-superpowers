@@ -43,7 +43,7 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v0.1.0`.
+`github:blugart-dev/dsh-superpowers#v0.2.0`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
@@ -110,6 +110,25 @@ Know its limits before you rely on it:
 
 Every row also accepts `diagnosticsLog: <absolute path>`. Each activation decision
 is then appended to that file, which is useful when a row seems inactive.
+
+### Skill names, overrides and collisions
+
+DSH has no skill namespaces. Upstream's skills are addressed as `superpowers:<name>`
+on Claude Code, but here they use bare names (`brainstorming`,
+`test-driven-development`), and the skills refer to each other by those names.
+
+- **To replace one of these skills,** put a skill with the same name in a project's
+  `.dsh/skills/` or in `~/.dsh/skills/`. Those roots outrank this bundle (rank 600),
+  so your version wins, and the rest of the methodology keeps pointing at it.
+- **Another skill pack can collide.** If it ships a skill with the same name at a
+  higher priority, it shadows ours silently; DSH logs only a warning. Check
+  `npm run inspect-session` if a skill behaves unexpectedly.
+
+### Subagents
+
+Upstream's session-start hook never reaches subagents. To match that, the bootstrap
+section is empty in delegated sessions (`delegationDepth > 0`). Set
+`subagents: true` on the `dsh-superpowers-bootstrap` row to include it there too.
 
 ## Uninstall
 

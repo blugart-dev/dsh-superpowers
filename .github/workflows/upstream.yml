@@ -1,0 +1,78 @@
+name: upstream
+
+# Weekly: if obra/superpowers published a newer release than upstream/pin.json,
+# open a pull request that moves the pin and rebuilds skills/. If a DSH overlay
+# no longer applies, the PR still opens (pin only) and says which ones need
+# re-applying by hand.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Newer upstream release?
+        id: check
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/bump-upstream.mjs --check
+
+      - name: Skip if a PR for this release already exists
+        if: steps.check.outputs.newer == 'true'
+        id: existing
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="upstream/${{ steps.check.outputs.tag }}"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then echo "exists=true" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Move the pin and rebuild
+        if: steps.check.outputs.newer == 'true' && steps.existing.outputs.exists != 'true'
+        id: bump
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          node scripts/bump-upstream.mjs --latest | tee bump.txt
+          if npm run --silent sync > sync.txt 2>&1; then echo "synced=true" >> "$GITHUB_OUTPUT"; fi
+          cat sync.txt
+
+      - name: Open pull request
+        if: steps.check.outputs.newer == 'true' && steps.existing.outputs.exists != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${{ steps.check.outputs.tag }}"
+          branch="${{ steps.existing.outputs.branch }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          if [ "${{ steps.bump.outputs.synced }}" = "true" ]; then
+            git add upstream/pin.json skills
+            status="skills/ rebuilt; every DSH overlay still applies. Review the upstream release notes against the DSH notes, then run the eval harness before merging."
+          else
+            git add upstream/pin.json
+            status="**skills/ NOT rebuilt: some DSH overlays no longer apply.** Check out this branch, re-apply them by hand in skills/, run \`npm run overlays\` and \`npm run verify\`, and push."
+          fi
+          git commit -m "Bump upstream to obra/superpowers $tag"
+          git push origin "$branch"
+          {
+            echo "Upstream released **$tag**: https://github.com/obra/superpowers/releases/tag/$tag"
+            echo
+            echo "$status"
+            echo
+            echo '```'; cat bump.txt; echo; cat sync.txt; echo '```'
+          } > body.md
+          gh pr create --title "Bump upstream to obra/superpowers $tag" --body-file body.md --head "$branch"

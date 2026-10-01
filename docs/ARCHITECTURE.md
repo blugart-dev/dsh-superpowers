@@ -48,6 +48,12 @@ DSH profile
   references, and that throw would break prompt assembly in every session.
 - **`inject: ['systemPrompt']`.** Without it, the Host activated the plugin
   before the service existed and nothing was registered. This was observed live.
+- **Subagents get no bootstrap.** The section text is a function DSH calls on
+  every prompt assembly. It returns `''` when the assembly's
+  `agent.session.header.delegationDepth > 0`, and the renderer drops empty
+  sections. This matches upstream, whose hook never reaches subagents, and saves
+  about 5 KB of prompt per subagent. Verified live by the `subagent` harness
+  scenario.
 - **Failure handling.** Every failure degrades to "no bootstrap", never to a
   failed activation.
 

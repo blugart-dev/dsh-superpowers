@@ -40,6 +40,9 @@ export async function buildSkills({ pin, read, patches, added }) {
   }
 
   const out = new Map();
+  // Collect every stale overlay before failing, so an upstream upgrade reports
+  // all the DSH notes that need re-applying at once, not one per attempt.
+  const failures = [];
   for (const path of upstreamPaths.sort()) {
     const raw = await read(SKILLS + path);
     let text = stripSkillPrefix(raw.toString('utf8'));
@@ -48,12 +51,21 @@ export async function buildSkills({ pin, read, patches, added }) {
       try {
         text = applyPatch(text, patch);
       } catch (error) {
-        throw new Error(`overlay for ${path} no longer applies: ${error.message}`);
+        failures.push({ path, reason: error.message });
+        continue;
       }
     }
     // Byte-exact passthrough when nothing changed, so binary or odd encodings
     // in upstream survive untouched.
     out.set(path, text === raw.toString('utf8') ? raw : Buffer.from(text, 'utf8'));
+  }
+  if (failures.length > 0) {
+    const noun = failures.length === 1 ? 'overlay no longer applies' : 'overlays no longer apply';
+    const error = new Error(
+      `${failures.length} ${noun}:\n` + failures.map((f) => `  - ${f.path}: ${f.reason}`).join('\n')
+    );
+    error.failures = failures;
+    throw error;
   }
   for (const [path, buffer] of added) out.set(path, buffer);
   return out;

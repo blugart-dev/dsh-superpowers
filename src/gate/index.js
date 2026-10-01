@@ -252,7 +252,7 @@ function run(ctx, config) {
       const disposeSection = systemPrompt.section({
         name: 'superpowers-gate',
         order: PROMPT_SECTION_ORDER,
-        text: promptText(settings)
+        text: promptText()
       });
       ctx.effect(() => disposeSection, 'superpowers-gate prompt section');
       // The diagnostic that would have caught this bug in the first place: it
@@ -295,21 +295,26 @@ async function resolveEscapeHatch(registry, skillName, registrationError) {
 /**
  * The durable prompt section.
  *
- * Kept short on purpose: it states the rule and the recovery, and defers the
- * methodology itself to the skills so this plugin does not become a second,
- * competing source of process instructions.
+ * Kept short on purpose: it states the rule and defers the methodology itself to
+ * the skills, so this plugin does not become a second, competing source of
+ * process instructions.
  *
- * @param {object} settings - resolved config.
+ * It deliberately does NOT name the escape-hatch skill. When it did, agents
+ * loaded the escape hatch pre-emptively as a ritual (observed live, 1 run in 3),
+ * which satisfies the gate without engaging any methodology. The escape hatch
+ * is named only in the denial message, where it is a recovery path.
+ *
  * @returns {string} the section text.
  */
-function promptText(settings) {
+function promptText() {
   return [
     '## Superpowers workflow gate',
     '',
     'This session enforces the Superpowers workflow. Until you load a skill with the',
     `\`skill\` tool, \`write\` and \`edit\` calls to workspace source files are denied.`,
     '',
-    `To clear it: call the \`skill\` tool with {"name": "${settings.escapeSkill.name}"}, then retry.`,
+    'Before writing code, load the skill that applies to your task. If a write is',
+    'denied anyway, the denial message explains how to recover.',
     'Plans, specs and research notes stay writable while the gate is closed, so you can',
     'always write the plan that precedes the code.',
     '',

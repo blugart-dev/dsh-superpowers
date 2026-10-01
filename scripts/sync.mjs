@@ -35,12 +35,22 @@ const patches = new Map(
 );
 const added = new Map(listFiles(addedDir).map((path) => [path, readFileSync(join(addedDir, path))]));
 
-const built = await buildSkills({
-  pin,
-  read: (path) => readUpstreamFile(pin, path, cacheRoot, { offline }),
-  patches,
-  added
-});
+let built;
+try {
+  built = await buildSkills({
+    pin,
+    read: (path) => readUpstreamFile(pin, path, cacheRoot, { offline }),
+    patches,
+    added
+  });
+} catch (error) {
+  console.error(`Cannot build skills/ from ${pin.repository}@${pin.commit.slice(0, 7)} (v${pin.version}).`);
+  console.error(error.message);
+  if (error.failures) {
+    console.error('Re-apply each DSH note by hand in skills/, then run `npm run overlays` (see CONTRIBUTING.md).');
+  }
+  process.exit(1);
+}
 
 const skillsDir = join(root, 'skills');
 

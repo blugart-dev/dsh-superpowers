@@ -17,9 +17,14 @@
 
 export const ESCAPE_SKILL_NAME = 'superpowers-workflow';
 
+/**
+ * The catalog line. Recovery-only on purpose: an earlier "Load this to clear the
+ * write gate" description made agents load it before doing anything else
+ * (observed live, 4 runs in 4), satisfying the gate without any methodology.
+ */
 export const ESCAPE_SKILL_DESCRIPTION =
-  'Load this to clear the Superpowers workflow write gate. Explains why source writes are ' +
-  'blocked, which methodology skill applies to the task in front of you, and the three Iron Laws.';
+  'Only after the Superpowers workflow gate has denied a write: explains the denial and how to ' +
+  'recover. For normal work, load the methodology skill that fits your task instead.';
 
 export const ESCAPE_SKILL_CONTENT = `# Superpowers workflow gate
 

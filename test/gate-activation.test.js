@@ -109,7 +109,12 @@ test('an armed gate publishes its durable prompt section', async () => {
   // deliberately different documents: `promptText` warns before a write is
   // attempted, `denialMessage` recovers after one is refused.
   assert.match(calls.sections[0].text, /`write` and `edit` calls to workspace source files are denied/);
-  assert.match(calls.sections[0].text, /"superpowers-workflow"/, 'must name the recovery skill');
+  // Observed live (eval harness, gate scenario, 1 run in 3): when the
+  // announcement named the recovery skill, the agent loaded it pre-emptively as
+  // a ritual instead of the methodology skill for its task. The announcement now
+  // steers to the task's skill; only the denial message names the escape hatch.
+  assert.doesNotMatch(calls.sections[0].text, /superpowers-workflow/, 'must not advertise the escape hatch');
+  assert.match(calls.sections[0].text, /skill that applies to your task/);
   assert.ok(Number.isFinite(calls.sections[0].order), 'the section order must be a finite number');
 });
 
@@ -171,6 +176,16 @@ test('resolveSettings still reports the shipped defaults', () => {
   const settings = resolveSettings(undefined);
   assert.equal(settings.gate, false);
   assert.equal(settings.announceInPrompt, true);
+});
+
+// Observed live (eval harness, gate-steer, 4 runs in 4): the catalog description
+// "Load this to clear the ... write gate" made agents load the escape hatch
+// before doing anything else. The catalog line must read as recovery-only.
+test('the escape skill is described as recovery-only in the catalog', async () => {
+  const { ESCAPE_SKILL_DESCRIPTION } = await import('../src/gate/escape-skill.js');
+  assert.match(ESCAPE_SKILL_DESCRIPTION, /^Only after/);
+  assert.match(ESCAPE_SKILL_DESCRIPTION, /denied/);
+  assert.doesNotMatch(ESCAPE_SKILL_DESCRIPTION, /^Load this to clear/);
 });
 
 // Regression: the first build appended to gate-diag.log beside the module on
