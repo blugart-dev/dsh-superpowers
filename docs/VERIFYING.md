@@ -1,5 +1,24 @@
 # Verifying an install
 
+## Verified so far
+
+These results come from a headless profile on DSH `0.2.0-rc.2` (Windows 11), with
+the bundle installed from GitHub. See the CONTRIBUTING "End-to-end test" section
+for the procedure.
+
+| Behaviour | Evidence from the session log |
+|---|---|
+| Rows compose, and relative row paths resolve | `--dump-config` lists the 3 rows, with the gate disabled |
+| Bootstrap is in the system prompt, once | `inspect-session`: `present once` |
+| Skills are served from the package | the `Base directory` points into the installed package |
+| An armed gate denies, and the escape hatch recovers | `write` denied, `superpowers-workflow` loaded, retry allowed |
+
+**Not yet verified:**
+
+- macOS and Linux.
+- Gate behaviour in forked subagents and on resume.
+- The brainstorming visual companion.
+
 A successful install proves nothing about what the model receives. Verify the
 outcome from DSH's own session log instead.
 

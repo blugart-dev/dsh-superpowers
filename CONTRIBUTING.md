@@ -53,6 +53,29 @@
 | `scripts/` | `sync`, `overlays`, `check`, `inspect-session` |
 | `evals/` | behavioural scenarios |
 
+## End-to-end test against a real DSH
+
+Unit tests stub the Host. Before a release, check the real thing in a throwaway
+**headless** profile. This needs no GUI and leaves your own profile untouched.
+
+```powershell
+$dsh = "$env:LOCALAPPDATA\Programs\DeepSeek Harness\resources\runtime\cli\bin\dsh.cmd"
+& $dsh sp-e2e --from-default-profile headless --dump-config > $null   # create the profile
+& $dsh plugin --profile sp-e2e add github:blugart-dev/dsh-superpowers  # or an absolute path to a clone
+& $dsh --profile sp-e2e --dump-config | Select-String dsh-superpowers  # three rows, gate disabled
+
+# In an empty folder: one real session
+& $dsh sp-e2e "Does your system prompt contain 'You have superpowers.'? Load test-driven-development and quote its base directory line."
+npm run inspect-session -- --workspace <that folder's name>         # expect: Bootstrap present once
+```
+
+To test the gate, pass an overlay with `--patch gate.yml` that sets
+`disabled: false` and `gate: true` on `dsh-superpowers-gate`. Then ask for a
+`write` to `src/` without loading a skill. `inspect-session` should show the
+write denied, then `superpowers-workflow` loaded, then the retry allowed.
+
+When you are done, delete `~/.dsh/profiles/sp-e2e`.
+
 ## Testing inside DeepSeek Harness
 
 DSH's sandbox cannot open pipes to child processes. That is why `npm test`
