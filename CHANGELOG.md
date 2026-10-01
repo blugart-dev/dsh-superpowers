@@ -3,6 +3,24 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## Unreleased
+
+**Fixed in `dsh-tools.md`** (found by the splitpot field test)
+
+- **It no longer tells agents to continue a subagent with `send_message`, or to
+  find subagents with `list_agents`.**
+  - In a profile with the agent-team bundle, those tools address teammates
+    only: `send_message` to a finished subagent's id fails with "active teammate
+    … not found", and `list_agents` lists only the lead.
+  - In a plain headless profile, `list_agents` shows no subagents once they
+    finish.
+  - The mapping now says to dispatch a fresh subagent with the brief, the
+    previous report and the findings as files. That claim had been carried over
+    unverified from the early DSH sessions.
+- **New rule: agents must not amend or rebase a shared branch.** In splitpot an
+  implementer's `git commit --amend` landed on the controller's commit. Nothing
+  was lost (the controller caught it from the reflog), but history was rewritten.
+
 ## 1.0.0-rc.1 — 2026-10-01
 
 Upstream: obra/superpowers v6.4.2 (unchanged). This is a release candidate: the

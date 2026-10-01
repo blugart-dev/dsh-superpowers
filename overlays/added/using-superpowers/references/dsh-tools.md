@@ -11,7 +11,7 @@ Skills describe actions. On DeepSeek Harness (DSH) they map to these tools.
 | Run a long-lived command (a server, a watcher) | start it as a managed job instead of a blocking call; read it with `job_output`, stop it with `job_kill` |
 | Create / update todos | `todo_write` |
 | Ask your human partner | `ask_user_question` |
-| Dispatch a subagent | `subagent` (fresh context: pass everything it needs) or `subagent_fork` (inherits this conversation's completed turns). Continue one with `send_message`; see them with `list_agents`; stop one with `interrupt_agent`. |
+| Dispatch a subagent | `subagent` (fresh context: pass everything it needs) or `subagent_fork` (inherits this conversation's completed turns). It runs in the background; you are notified when it finishes, and its final report is the result. |
 | Fetch a URL / search the web | `web_fetch` / `web_search` |
 | Leave plan mode | `exit_plan_mode` |
 
@@ -25,6 +25,13 @@ Skills describe actions. On DeepSeek Harness (DSH) they map to these tools.
 - Hand artifacts over as files. Text pasted into a dispatch prompt stays in your
   context for the rest of the session.
 - A subagent's report is a claim. Verify it by reading what it changed.
+- Do not count on continuing a subagent after it finishes. `list_agents`,
+  `send_message` and `wait_agent` address live agents; with the agent-team
+  bundle installed they address teammates only, and a finished subagent's id is
+  rejected. For a follow-up, such as a fix round, dispatch a fresh subagent with
+  the brief, its previous report and the findings as files.
+- Do not let several agents amend or rebase a shared branch. Each one commits
+  new commits only; rewriting history is the controller's call.
 
 ## Running bundled scripts
 
