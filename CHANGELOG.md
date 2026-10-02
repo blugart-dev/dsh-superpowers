@@ -3,6 +3,30 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## 1.0.1 — 2026-10-02
+
+Upstream: obra/superpowers v6.4.2 (unchanged).
+
+**Added to `dsh-tools.md`** (each one checked against DSH's own tool source,
+pinned by `test/mapping.test.js`):
+
+- **DSH has no subagent types.** Where a skill names one, such as
+  `Subagent (general-purpose):` or a code-reviewer, the role and its
+  instructions go into the `subagent` prompt. DSH's subagent tool rejects
+  `agentType` as an unsupported option, and upstream's porting guide asks the
+  mapping to say how a type is passed.
+- **`todo_write` replaces the whole list,** so every call must include every
+  item.
+- **`interrupt_agent`** stops a running subagent.
+
+**Verified**
+
+- `npm run verify`: 140/140, including the three new mapping tests, each
+  seen failing first.
+- Harness, 3 runs each, on DSH 0.2.0-rc.2: `bootstrap`, `route-build`,
+  `route-plan`, `control` (no over-triggering) and `subagent` (parent 1x,
+  child 0x) all 3/3.
+
 ## 1.0.0 — 2026-10-02
 
 Upstream: obra/superpowers v6.4.2 (`8ca22dba`).

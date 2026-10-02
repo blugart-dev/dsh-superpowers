@@ -54,7 +54,7 @@ From the DSH Desktop **Plugins** page, choose **Install**, then enter:
 This installs the latest release from [npm](https://www.npmjs.com/package/@blugart-dev/dsh-superpowers),
 and DSH's plugin manager checks compatibility before downloading anything.
 To install straight from GitHub instead, use
-`github:blugart-dev/dsh-superpowers#v1.0.0` (a release tag) or
+`github:blugart-dev/dsh-superpowers#v1.0.1` (a release tag) or
 `github:blugart-dev/dsh-superpowers` (tracks `main`).
 
 You can also ask an agent in Creator mode:

@@ -9,14 +9,17 @@ Skills describe actions. On DeepSeek Harness (DSH) they map to these tools.
 | Find files / search contents | `glob` / `grep` |
 | Run a shell command | the shell tool: `pwsh` on Windows (native `C:\...` paths, `$env:NAME`); on macOS and Linux, the shell tool your session lists |
 | Run a long-lived command (a server, a watcher) | start it as a managed job instead of a blocking call; read it with `job_output`, stop it with `job_kill` |
-| Create / update todos | `todo_write` |
+| Create / update todos | `todo_write`. Each call replaces the whole list, so send every item, not only the changed ones. |
 | Ask your human partner | `ask_user_question` |
-| Dispatch a subagent | `subagent` (fresh context: pass everything it needs) or `subagent_fork` (inherits this conversation's completed turns). It runs in the background; you are notified when it finishes, and its final report is the result. |
+| Dispatch a subagent | `subagent` (fresh context: pass everything it needs) or `subagent_fork` (inherits this conversation's completed turns). It runs in the background; you are notified when it finishes, and its final report is the result. Stop a running one with `interrupt_agent`. |
 | Fetch a URL / search the web | `web_fetch` / `web_search` |
 | Leave plan mode | `exit_plan_mode` |
 
 ## Subagents
 
+- DSH has no subagent types. Where a skill names one, such as
+  `Subagent (general-purpose):` or a code-reviewer, write that role and its
+  instructions into the `subagent` prompt.
 - Dispatch independent subagents in the same message; they run concurrently.
   Agents that write the same checkout are not independent: run one implementer
   at a time there, and overlap only read-only work such as a review of a

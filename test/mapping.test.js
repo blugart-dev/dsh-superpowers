@@ -51,3 +51,21 @@ test('spawn EPERM from a test runner: run it in-process before asking for full a
   assert.match(mapping, /--experimental-test-isolation=none/);
   assert.match(mapping, /before asking for (full|wider) access/i);
 });
+
+test('typed subagents: DSH has no agent type, so the role goes into the prompt', () => {
+  // Skills dispatch "Subagent (general-purpose):" and a code-reviewer; DSH's
+  // subagent tool rejects `agentType` as an unsupported Claude Code option.
+  // Upstream's porting guide asks the mapping to say how a type is passed.
+  assert.match(mapping, /no (subagent|agent) types?/i);
+  assert.match(mapping, /general-purpose/);
+});
+
+test('todo_write replaces the whole list on every call', () => {
+  // DSH: "The model resends the entire list". Sending only the changed items
+  // drops the rest.
+  assert.match(mapping, /todo_write[^\n]*(entire|whole) list/i);
+});
+
+test('interrupt_agent stops a running subagent', () => {
+  assert.match(mapping, /interrupt_agent/);
+});
