@@ -52,14 +52,10 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v1.0.0-rc.2`.
+`github:blugart-dev/dsh-superpowers#v1.0.0-rc.3`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
-
-While this repository is private, the installer needs git access to it. Your SSH
-key must be registered with an account that can read the repository. Without
-access, clone it and install from the local path instead.
 
 **Restart DSH after installing or updating.** A replaced package needs a fresh
 module generation.
@@ -141,6 +137,24 @@ on Claude Code, but here they use bare names (`brainstorming`,
 Upstream's session-start hook never reaches subagents. To match that, the bootstrap
 section is empty in delegated sessions (`delegationDepth > 0`). Set
 `subagents: true` on the `dsh-superpowers-bootstrap` row to include it there too.
+
+## Known limitations
+
+- **Tested platforms.** Live sessions have run on Windows 11 with DSH Desktop
+  only. The `compat` workflow checks that the bundle composes on Ubuntu and
+  Windows, but makes no model calls. macOS is untested.
+- **Models.** Tested only with DeepSeek's models, mostly `deepseek-flash`.
+- **No effectiveness numbers.** The tests check that the methodology fires: the
+  right skill loads before code, tests come first, and verification is fresh.
+  They do not measure whether projects turn out better than without it, and no
+  such figure is claimed.
+- **Model per subagent.** Upstream's subagent-driven development picks a model
+  for each subagent. On DSH that needs the subagent model selection setting,
+  which is off by default; otherwise every subagent runs on the session's model.
+- **Release candidate.** Each long field test has so far found something in the
+  DSH tool mapping to correct (see [CHANGELOG.md](CHANGELOG.md)). Expect more
+  fixes before 1.0.
+- **The gate is opt-in** and cannot see writes made through the shell.
 
 ## Uninstall
 

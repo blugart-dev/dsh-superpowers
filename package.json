@@ -1,6 +1,6 @@
 {
   "name": "@blugart-dev/dsh-superpowers",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "description": "Superpowers (obra/superpowers v6.4.2) for DeepSeek Harness: the full skill library, the session-start bootstrap, and an optional workflow gate.",
   "type": "module",
   "license": "MIT",

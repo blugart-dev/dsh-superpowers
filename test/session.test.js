@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { zstdCompressSync } from 'node:zlib';
 
-import { decodeSessionLog, summarizeSession } from '../scripts/lib/session.mjs';
+import { decodeSessionLog, parseInspectArgs, summarizeSession } from '../scripts/lib/session.mjs';
 import { denialMessage } from '../src/gate/policy.js';
 
 // Built from the real message so the detector cannot drift from the gate.
@@ -57,4 +57,27 @@ test('summarizes bootstrap presence, skill loads and writes', () => {
   assert.equal(summary.userMessages, 1);
   assert.deepEqual(summary.userMessageTimes, [1002]);
   assert.equal(summary.turns, 1);
+});
+
+test('inspect-session arguments: a lone id is the wanted session, not skipped', () => {
+  assert.deepEqual(parseInspectArgs(['0221fd7c']), { wanted: '0221fd7c', workspace: undefined, subagents: false });
+  assert.deepEqual(parseInspectArgs(['--workspace', 'dice-lab']), { wanted: undefined, workspace: 'dice-lab', subagents: false });
+  assert.deepEqual(parseInspectArgs(['--workspace', 'dice-lab', 'abc', '--subagents']), { wanted: 'abc', workspace: 'dice-lab', subagents: true });
+  assert.deepEqual(parseInspectArgs(['abc', '--workspace', 'dice-lab']), { wanted: 'abc', workspace: 'dice-lab', subagents: false });
+  assert.deepEqual(parseInspectArgs([]), { wanted: undefined, workspace: undefined, subagents: false });
+});
+
+test('shell commands carry their exit code (from DSH\'s "[exit code: N]") and output', () => {
+  const shell = (callId, time, command, text) => [
+    event('tool/call', time, { name: 'pwsh', callId, arguments: JSON.stringify({ command }) }),
+    event('tool/result', time + 1, { message: { toolCallId: callId, isError: false, content: [{ type: 'text', text }] } })
+  ];
+  const events = [
+    ...shell('p1', 2000, 'npm test', 'ℹ pass 1\nℹ fail 0\n'),
+    ...shell('p2', 2010, 'bash x', 'x: line 41: basename: command not found\n[exit code: 127]')
+  ].map((line) => JSON.parse(line));
+  const [ok, bad] = summarizeSession(events).shellCommands;
+  assert.equal(ok.exitCode, 0);
+  assert.equal(bad.exitCode, 127);
+  assert.match(bad.output, /basename: command not found/);
 });

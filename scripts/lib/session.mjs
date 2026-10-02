@@ -45,6 +45,21 @@ export function decodeSessionLog(buffer) {
   return events;
 }
 
+/**
+ * Parse `inspect-session` arguments: `[<id-or-prefix>] [--workspace <name>] [--subagents]`.
+ *
+ * @param {string[]} args - argv after the script name.
+ * @returns {{ wanted: string | undefined, workspace: string | undefined, subagents: boolean }}
+ */
+export function parseInspectArgs(args) {
+  const workspaceIndex = args.indexOf('--workspace');
+  const workspace = workspaceIndex === -1 ? undefined : args[workspaceIndex + 1];
+  const wanted = args.find(
+    (arg, i) => !arg.startsWith('--') && (workspaceIndex === -1 || i !== workspaceIndex + 1)
+  );
+  return { wanted, workspace, subagents: args.includes('--subagents') };
+}
+
 /** @param {unknown} content - a message content array. */
 function textOf(content) {
   return Array.isArray(content) ? content.map((part) => (part?.type === 'text' ? part.text : '')).join('') : '';
@@ -97,7 +112,17 @@ export function summarizeSession(events) {
         denied: result === undefined ? undefined : GATE_DENIAL.test(result.text)
       });
     } else if (['pwsh', 'bash', 'shell'].includes(e.data?.name)) {
-      shellCommands.push({ command: String(args.command ?? ''), time: e.time, isError: result?.isError });
+      // DSH marks a failing command with "[exit code: N]" in its output, not
+      // with isError; no marker on a completed command means exit 0.
+      const output = result?.text ?? '';
+      const marker = output.match(/\[exit code: (-?\d+)\]/);
+      shellCommands.push({
+        command: String(args.command ?? ''),
+        time: e.time,
+        isError: result?.isError,
+        exitCode: result === undefined ? undefined : marker ? Number(marker[1]) : 0,
+        output
+      });
     }
   }
 

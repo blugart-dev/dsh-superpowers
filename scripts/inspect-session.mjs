@@ -13,12 +13,9 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import { decodeSessionLog, summarizeSession } from './lib/session.mjs';
+import { decodeSessionLog, parseInspectArgs, summarizeSession } from './lib/session.mjs';
 
-const args = process.argv.slice(2);
-const workspaceIndex = args.indexOf('--workspace');
-const workspace = workspaceIndex === -1 ? undefined : args[workspaceIndex + 1];
-const wanted = args.find((arg, i) => !arg.startsWith('--') && i !== workspaceIndex + 1);
+const { wanted, workspace, subagents: includeSubagents } = parseInspectArgs(process.argv.slice(2));
 
 const sessionsRoot = join(process.env.DSH_HOME ?? join(homedir(), '.dsh'), 'sessions');
 if (!existsSync(sessionsRoot)) {
@@ -45,7 +42,6 @@ if (logs.length === 0) {
 logs.sort((a, b) => b.mtime - a.mtime);
 
 // Prefer the newest top-level session; subagents are summarized beneath it.
-const includeSubagents = args.includes('--subagents');
 const decoded = logs.map((log) => ({ ...log, events: decodeSessionLog(readFileSync(log.file)) }));
 const header = (entry) => entry.events.find((e) => e.type === 'session') ?? {};
 const chosen = decoded.find((entry) => includeSubagents || header(entry).origin !== 'subagent') ?? decoded[0];

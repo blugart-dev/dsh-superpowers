@@ -33,8 +33,8 @@ function routesTo(expected) {
   };
 }
 
-/** A shell command that runs the project's test suite. */
-const TEST_COMMAND = /\bnpm (run )?test\b|\bnode\b.*--test\b|\bnpx (vitest|jest)\b/;
+/** A shell command that runs the tests: the suite, or a node:test file run directly. */
+const TEST_COMMAND = /\bnpm (run )?test\b|\bnode\b.*--test\b|\bnode\s+\S*\.test\.[cm]?js\b|\bnpx (vitest|jest)\b/;
 
 /** A profile patch that arms the gate. */
 function gateOverlay({ bootstrap, announce, requiredSkills }) {
@@ -55,6 +55,28 @@ function gateOverlay({ bootstrap, announce, requiredSkills }) {
     ''
   ].join('\n');
 }
+
+/** A test run whose output shows the suite actually passed. */
+const greenRun = (c) =>
+  TEST_COMMAND.test(c.command) && c.exitCode === 0 && /ℹ pass [1-9]/.test(c.output ?? '') && !/ℹ fail [1-9]|spawn EPERM/.test(c.output ?? '');
+
+/**
+ * Shell output that means the command did not work. PowerShell errors such as
+ * "is not recognized" carry no "[exit code: N]" marker, so exit codes alone miss them.
+ */
+const SHELL_FAILURE = /fatal error|is not recognized|command not found|requires approval|\[exit code: (-|[1-9])/;
+
+/** sdd-workspace prints the plan's workspace: <root>/.superpowers/sdd/p */
+const showsWorkspace = (c) => /\.superpowers[\\/]sdd[\\/]p\b/.test(c.output ?? '') && !SHELL_FAILURE.test(c.output ?? '');
+const failureOf = (c) => (c.output ?? '').match(SHELL_FAILURE)?.[0] ?? `exit ${c.exitCode}`;
+const bashScriptRuns = (summary) =>
+  (summary.shellCommands ?? []).filter((c) => /bash/i.test(c.command) && /sdd-workspace/.test(c.command));
+
+const BUNDLED_SCRIPT_FILES = { 'docs/plans/p.md': '# Plan\n\n### Task 1: nothing\n' };
+const BUNDLED_SCRIPT_PROMPT =
+  "Run `git init` in this folder. Then run the subagent-driven-development skill's bundled `sdd-workspace` " +
+  'script for the plan docs/plans/p.md, as your tool mapping says to run bundled scripts, and report the ' +
+  'directory it prints. Do not dispatch subagents.';
 
 const NODE_PROJECT = {
   'package.json': JSON.stringify({ name: 'fixture', type: 'module', scripts: { test: 'node --test --test-isolation=none' } }, null, 2) + '\n'
@@ -299,6 +321,68 @@ export const SCENARIOS = [
         return { pass: true, detail: denied ? 'fork denied, then recovered via the escape hatch' : 'fork write allowed (skill load inherited)' };
       }
       return { pass: false, detail: 'the fork never completed a write' };
+    }
+  },
+  {
+    // splitpot #2 (desktop, auto mode): SDD's bundled scripts died with
+    // "basename: command not found" under the bash the mapping recommended. The
+    // mapped bash must run them first time; working only after a workaround fails.
+    id: 'bundled-script',
+    mechanics: true,
+    permissionMode: 'danger-full-access',
+    files: BUNDLED_SCRIPT_FILES,
+    prompt: BUNDLED_SCRIPT_PROMPT,
+    check: (summary) => {
+      const runs = bashScriptRuns(summary);
+      if (runs.length === 0) return { pass: false, detail: 'sdd-workspace was never run through bash' };
+      if (showsWorkspace(runs[0])) return { pass: true, detail: 'ran cleanly first time' };
+      return runs.some(showsWorkspace)
+        ? { pass: false, detail: 'first run failed; worked only after a workaround' }
+        : { pass: false, detail: `never ran cleanly: ${failureOf(runs.at(-1))}` };
+    }
+  },
+  {
+    // Headless workspace-write sandbox: msys bash cannot start at all
+    // (NtCreateDirectoryObject ... 0xC0000022). Before the mapping said so, one
+    // agent tried eight commands, an escalation among them, before falling back.
+    id: 'bundled-script-sandbox',
+    mechanics: true,
+    files: BUNDLED_SCRIPT_FILES,
+    prompt: BUNDLED_SCRIPT_PROMPT,
+    check: (summary) => {
+      const commands = summary.shellCommands ?? [];
+      const failedBash = commands.filter((c) => /bash/i.test(c.command) && SHELL_FAILURE.test(c.output ?? '')).length;
+      const produced = commands.some(showsWorkspace);
+      if (!produced) return { pass: false, detail: `no workspace produced (${failedBash} failed bash attempts)` };
+      return failedBash <= 1
+        ? { pass: true, detail: `workspace produced after ${failedBash} failed bash attempt(s)` }
+        : { pass: false, detail: `workspace produced, but only after ${failedBash} failed bash attempts` };
+    }
+  },
+  {
+    // The DSH sandbox cannot open pipes to child processes, so plain
+    // `node --test` (one child per file) dies with `spawn EPERM`. Fixing the bug
+    // is not done until a test run shows it fixed: the check wants a green run
+    // after the last write, however the agent gets one.
+    id: 'sandbox-runner',
+    sandboxProbe: true,
+    files: {
+      'package.json': JSON.stringify({ name: 'fixture', type: 'module', scripts: { test: 'node --test' } }, null, 2) + '\n',
+      'src/sum.js': 'export function sum(a, b) {\n  return a + b - 1;\n}\n',
+      'test/sum.test.js':
+        "import { test } from 'node:test';\nimport assert from 'node:assert/strict';\nimport { sum } from '../src/sum.js';\n\n" +
+        "test('adds', () => assert.equal(sum(2, 3), 5));\n"
+    },
+    prompt: 'npm test is failing on my machine: test/sum.test.js expects 5 but gets 4. Please fix it.',
+    check: (summary) => {
+      const lastWrite = summary.writes.filter((w) => w.denied !== true).at(-1);
+      if (lastWrite === undefined) return { pass: false, detail: 'nothing was written' };
+      const commands = summary.shellCommands ?? [];
+      const sawEperm = commands.some((c) => /spawn EPERM/.test(c.output ?? ''));
+      const green = commands.find((c) => c.time > lastWrite.time && greenRun(c));
+      if (!green) return { pass: false, detail: `no green test run after the fix${sawEperm ? ' (hit spawn EPERM)' : ''}` };
+      const how = /isolation=none/.test(green.command) ? '--test-isolation=none' : green.command.trim().slice(0, 50);
+      return { pass: true, detail: `green after the fix via ${how}${sawEperm ? ', after spawn EPERM' : ''}` };
     }
   },
   {

@@ -102,8 +102,11 @@ for (const scenario of selected) {
       writeFileSync(overlay, scenario.overlay);
       args.push('--patch', overlay);
     }
+    // The headless profile reads its sandbox mode from DSH_PERMISSION_MODE
+    // (default workspace-write); danger-full-access matches Desktop's auto mode.
+    const env = scenario.permissionMode ? { DSH_PERMISSION_MODE: scenario.permissionMode } : {};
     const started = Date.now();
-    let run = runDsh([...args, '-'], { cwd: workspace, input: scenario.prompt, timeout: timeoutMs });
+    let run = runDsh([...args, '-'], { cwd: workspace, input: scenario.prompt, timeout: timeoutMs, env });
     const topLevel = () =>
       evalSessions().find((s) => s.header.cwd === workspace && s.header.origin !== 'subagent');
 
@@ -112,7 +115,7 @@ for (const scenario of selected) {
     for (const followUp of scenario.followUps ?? []) {
       const sessionId = topLevel()?.header.id;
       if (sessionId === undefined) break;
-      run = runDsh([...args, '--session-id', sessionId, '-'], { cwd: workspace, input: followUp, timeout: timeoutMs });
+      run = runDsh([...args, '--session-id', sessionId, '-'], { cwd: workspace, input: followUp, timeout: timeoutMs, env });
     }
     const seconds = Math.round((Date.now() - started) / 1000);
 

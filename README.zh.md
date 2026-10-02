@@ -35,13 +35,11 @@
 在 DSH Desktop 的 **插件（Plugins）** 页面选择安装，输入：
 
 ```
-github:blugart-dev/dsh-superpowers#v1.0.0-rc.2
+github:blugart-dev/dsh-superpowers#v1.0.0-rc.3
 ```
 
 也可以在 Creator 模式下让智能体执行：
-`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.2" }`。
-
-仓库目前为私有，安装时需要有读取权限的 git（SSH）凭据；没有权限时，可先克隆，再从本地路径安装。
+`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.3" }`。
 
 **安装或更新后请重启 DSH**：替换已安装的包需要加载新的模块代。
 
@@ -72,6 +70,15 @@ plugin_manager { action: set_plugin, target: dsh-superpowers-bootstrap, enabled:
 门禁的局限：它看不到 shell 写入；它只在拒绝消息中给出恢复技能的名称，不会提前宣传。
 
 技能名称冲突、子智能体与诊断日志（`diagnosticsLog`）等细节，请参阅 [README.md](README.md)。
+
+## 已知局限
+
+- **测试平台**：实际会话只在 Windows 11 + DSH Desktop 上运行过。`compat` 工作流在 Ubuntu 和 Windows 上检查捆绑包能否组装，但不调用模型。macOS 未测试。
+- **模型**：只用 DeepSeek 的模型测试过，主要是 `deepseek-flash`。
+- **没有效果数据**：测试检查的是方法论是否生效（写代码前加载正确的技能、先写测试、验证是新鲜的），并不衡量项目是否因此做得更好，也不声称任何此类数字。
+- **子智能体的模型**：上游的子智能体驱动开发会为每个子智能体选择模型。在 DSH 上这需要开启子智能体模型选择设置（默认关闭）；否则所有子智能体都使用当前会话的模型。
+- **候选版本**：到目前为止，每次长时间的实地测试都发现了 DSH 工具映射中需要修正的地方（见 [CHANGELOG.md](CHANGELOG.md)）。1.0 之前预计还会有修正。
+- **门禁需要手动开启**，并且看不到通过 shell 进行的写入。
 
 ## 卸载
 

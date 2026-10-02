@@ -38,7 +38,7 @@ test('prompts never name a skill or Superpowers (that would steer the agent)', (
 test('every fixture test script runs inside the DSH sandbox (no child processes)', () => {
   for (const scenario of SCENARIOS) {
     const manifest = scenario.files?.['package.json'];
-    if (manifest === undefined) continue;
+    if (manifest === undefined || scenario.sandboxProbe) continue;
     const script = JSON.parse(manifest).scripts?.test ?? '';
     assert.match(script, /--test-isolation=none/, `${scenario.id}: ${script}`);
   }
@@ -184,4 +184,79 @@ test('subagent: the parent has the bootstrap and every child does not', () => {
   assert.equal(byId.subagent.check(parent, [summary({ bootstrapCount: 0 })]).pass, true);
   assert.equal(byId.subagent.check(parent, [summary({ bootstrapCount: 1 })]).pass, false);
   assert.equal(byId.subagent.check(parent, []).pass, false);
+});
+
+/** A shell command entry as summarizeSession() returns it. */
+const sh = (command, time, exitCode = 0, output = '') => ({ command, time, exitCode, output });
+
+test('bundled-script: SDD sdd-workspace must run to exit 0 through the mapped bash', () => {
+  const bundled = byId['bundled-script'];
+  assert.equal(bundled.mechanics, true);
+  const ok = { ...summary(), shellCommands: [sh('git init -q', 1), sh('& $bash .../scripts/sdd-workspace docs/plans/p.md', 2, 0, 'C:/w/.superpowers/sdd/p')] };
+  assert.equal(bundled.check(ok).pass, true);
+  const broken = { ...summary(), shellCommands: [sh('& $bash .../scripts/sdd-workspace docs/plans/p.md', 2, 127, 'basename: command not found')] };
+  assert.equal(bundled.check(broken).pass, false);
+  const recovered = { ...summary(), shellCommands: [
+    sh('& $bash .../scripts/sdd-workspace p.md', 2, 127, 'basename: command not found'),
+    sh('& $bash -c "export PATH=/usr/bin:$PATH; .../scripts/sdd-workspace p.md"', 3, 0, '/c/w/.superpowers/sdd/p')
+  ] };
+  const verdict = bundled.check(recovered);
+  assert.equal(verdict.pass, false, 'needing a workaround means the mapping failed');
+  assert.match(verdict.detail, /workaround|first/i);
+  assert.equal(bundled.check({ ...summary(), shellCommands: [] }).pass, false);
+  // PowerShell's "not recognized" carries no exit-code marker: it is still a failure.
+  const missingBash = { ...summary(), shellCommands: [
+    sh("$bash = '...\\mingw64\\usr\\bin\\bash.exe'; & $bash .../scripts/sdd-workspace p.md", 2, 0, "& : The term 'C:\\x\\bash.exe' is not recognized")
+  ] };
+  assert.equal(bundled.check(missingBash).pass, false);
+  // Auto mode, like the desktop runs in: no sandbox in the way of bash.
+  assert.equal(bundled.permissionMode, 'danger-full-access');
+});
+
+test('bundled-script-sandbox: Git Bash cannot start there, so fall back without flailing', () => {
+  const sandboxed = byId['bundled-script-sandbox'];
+  assert.equal(sandboxed.permissionMode, undefined, 'runs in the default workspace-write sandbox');
+  const msys = 'bash.exe: *** fatal error - NtCreateDirectoryObject(...): 0xC0000022';
+  const fallback = sh('$root = git rev-parse --show-toplevel; New-Item ... # sdd-workspace in PowerShell', 4, 0, 'C:\\w\\.superpowers\\sdd\\p');
+  const quick = { ...summary(), shellCommands: [sh('& $bash .../scripts/sdd-workspace p.md', 2, 0, msys), fallback] };
+  assert.equal(sandboxed.check(quick).pass, true);
+  const flailing = { ...summary(), shellCommands: [
+    sh('& $bash .../scripts/sdd-workspace p.md', 2, 0, msys),
+    sh("& 'C:\\Program Files\\Git\\bin\\bash.exe' .../scripts/sdd-workspace p.md", 3, 0, msys),
+    fallback
+  ] };
+  assert.equal(sandboxed.check(flailing).pass, false);
+  assert.equal(sandboxed.check({ ...summary(), shellCommands: [sh('& $bash .../scripts/sdd-workspace p.md', 2, 0, msys)] }).pass, false);
+});
+
+test('sandbox-runner: the bug fix must end with a green test run despite spawn EPERM', () => {
+  const probe = byId['sandbox-runner'];
+  assert.equal(probe.sandboxProbe, true);
+  assert.doesNotMatch(JSON.parse(probe.files['package.json']).scripts.test, /isolation/);
+  const eperm = 'Error: spawn EPERM\n[exit code: 1]';
+  const fixed = { ...summary({ writes: [['src/sum.js', 5]] }), shellCommands: [
+    sh('npm test', 2, 1, eperm), sh('node --test --test-isolation=none', 6, 0, 'ℹ pass 1\nℹ fail 0')
+  ] };
+  assert.equal(probe.check(fixed).pass, true);
+  assert.match(probe.check(fixed).detail, /isolation/);
+  const unverified = { ...summary({ writes: [['src/sum.js', 5]] }), shellCommands: [sh('npm test', 6, 1, eperm)] };
+  assert.equal(probe.check(unverified).pass, false);
+  const staleGreen = { ...summary({ writes: [['src/sum.js', 5]] }), shellCommands: [sh('node --test --test-isolation=none', 3, 0, 'ℹ fail 0')] };
+  assert.equal(probe.check(staleGreen).pass, false, 'a green run before the fix is not evidence for it');
+  const redGreen = { ...summary({ writes: [['src/sum.js', 5]] }), shellCommands: [sh('node --test --test-isolation=none', 6, 0, 'ℹ pass 0\nℹ fail 1')] };
+  assert.equal(probe.check(redGreen).pass, false);
+});
+
+test('running a node:test file directly counts as a test run', () => {
+  // Five kept sandbox-runner sessions: two verified with `node test/sum.test.js`
+  // (in-process, "ℹ pass 1", exit 0) and were scored as unverified.
+  const probe = byId['sandbox-runner'];
+  const direct = { ...summary({ writes: [['src/sum.js', 5]] }), shellCommands: [
+    sh('node test/sum.test.js 2>&1 | Select-Object -Last 15', 6, 0, '✔ adds\nℹ tests 1\nℹ pass 1\nℹ fail 0')
+  ] };
+  assert.equal(probe.check(direct).pass, true);
+  const wrap = byId['wrap-up'];
+  assert.equal(wrap.check({ ...summary(), shellCommands: [sh('node test/greet.test.js', 2)] }).pass, true);
+  // A node script that is not a test file is not a test run.
+  assert.equal(wrap.check({ ...summary(), shellCommands: [sh("node -e \"import('./src/greet.js')\"", 2)] }).pass, false);
 });

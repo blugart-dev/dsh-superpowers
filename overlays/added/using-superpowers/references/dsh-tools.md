@@ -18,10 +18,16 @@ Skills describe actions. On DeepSeek Harness (DSH) they map to these tools.
 ## Subagents
 
 - Dispatch independent subagents in the same message; they run concurrently.
+  Agents that write the same checkout are not independent: run one implementer
+  at a time there, and overlap only read-only work such as a review of a
+  committed diff.
 - Delegation depth is 1 and enforced: a subagent cannot dispatch its own subagents
   (it fails with "subagent depth 2 exceeds maxDepth 1"). Say so in implementer and
   reviewer briefs.
-- Name the model on every dispatch; an omitted model inherits this session's.
+- Choosing a subagent's model needs DSH's subagent model selection setting,
+  which is off by default. When it is on, `subagent` takes `provider` and `model`
+  and `list_subagent_models` lists the allowed routes. When it is off, every
+  subagent runs on this session's model; say so rather than claiming a model tier.
 - Hand artifacts over as files. Text pasted into a dispatch prompt stays in your
   context for the rest of the session.
 - A subagent's report is a claim. Verify it by reading what it changed.
@@ -37,12 +43,21 @@ Skills describe actions. On DeepSeek Harness (DSH) they map to these tools.
 
 Skills run their helpers as `bash scripts/<name>` or `node <file>`. On macOS and
 Linux, run them as written. On Windows the shell tool is `pwsh`, and a bare `bash`
-can resolve to WSL; use Git for Windows' bash by absolute path:
+can resolve to WSL; use Git for Windows' bash by absolute path. Take `bin\bash.exe`,
+not `usr\bin\bash.exe`: started from `pwsh`, the latter has no `/usr/bin` on its
+PATH, so scripts fail with `basename: command not found`.
 
 ```powershell
-$bash = Join-Path (Split-Path (Split-Path (Get-Command git).Source)) 'usr\bin\bash.exe'
+$bash = Join-Path (Split-Path (Split-Path (Split-Path (git --exec-path)))) 'bin\bash.exe'
 & $bash <skill directory>/scripts/<name> <args>
 ```
+
+`git --exec-path` finds Git's root whichever `git.exe` is first on PATH.
+
+**Inside DSH's sandbox (workspace-write), Git Bash cannot start.** It fails with
+`fatal error - NtCreateDirectoryObject(...): 0xC0000022`, whichever bash.exe
+you pick. Don't try other bash paths. Do the script's work directly in PowerShell
+and say so, or ask your human partner to run it outside the sandbox.
 
 - Run scripts from where they are installed: some call sibling scripts by
   relative path.

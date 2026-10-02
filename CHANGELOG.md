@@ -3,6 +3,86 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## 1.0.0-rc.3 — 2026-10-02
+
+Upstream: obra/superpowers v6.4.2 (unchanged).
+
+**Fixed in `dsh-tools.md`** (found by splitpot field test #2 and the new harness
+scenarios, pinned by `test/mapping.test.js`)
+
+- **Windows bash is now found with `git --exec-path`, and is Git's
+  `bin\bash.exe`.**
+  - Started from `pwsh`, the old `usr\bin\bash.exe` has no `/usr/bin` on its
+    PATH, so the bundled SDD scripts died with `basename: command not found`
+    (exit 127). Reproduced with the real `sdd-workspace` script: exit 127
+    before the fix, exit 0 after.
+  - Deriving Git's root from `Get-Command git` also broke whenever
+    `mingw64\bin\git.exe` came first on PATH. `git --exec-path` finds the root
+    either way.
+- **New: Git Bash cannot start inside DSH's sandbox.** Under workspace-write,
+  every msys bash dies with `NtCreateDirectoryObject … 0xC0000022`. The mapping
+  now says so and gives the fallback: do the script's work in PowerShell, or ask
+  the human to run it outside the sandbox. Before this note, one agent tried
+  eight commands, an escalation among them.
+- **Model naming is now conditional.** DSH's `subagent` tool takes `provider`
+  and `model` only when the Host's subagent model selection setting is on. It is
+  off by default, and then every child runs on the session's model (read from
+  `@deepseek-ai/dsh-tool-subagent`). The mapping had told agents to name the
+  model on every dispatch.
+- **Concurrent dispatch is narrowed.** "Dispatch independent subagents together"
+  now excludes implementers writing the same checkout: one implementer at a time,
+  overlapping only read-only work. In splitpot, a fix-round implementer edited
+  `src/settle.js` while the next task's implementer, still running in the same
+  checkout, had just been restoring source files with `git checkout --`.
+  Upstream SDD already forbids parallel implementers.
+
+**Fixed in `inspect-session`**
+
+- `npm run inspect-session -- <id>` ignored the id when it was the only
+  argument and showed the newest session instead. The parser skipped `args[0]`
+  whenever `--workspace` was absent. Parsing now lives in `parseInspectArgs`,
+  with a test.
+
+**Added**
+
+- **Harness scenarios** `bundled-script` (auto mode), `bundled-script-sandbox`
+  and `sandbox-runner` (a bug fix where `npm test` is plain `node --test`, which
+  dies with `spawn EPERM` in the sandbox).
+- **Per-scenario `permissionMode`.** The headless profile reads
+  `DSH_PERMISSION_MODE`, and `danger-full-access` matches Desktop's auto mode.
+- **Shell results in session summaries.** `summarizeSession` records each
+  command's `exitCode` and `output`. Checks match failure text too, because a
+  PowerShell "is not recognized" error carries no exit-code marker.
+- **README: "Known limitations"**, in English and Chinese.
+
+**Fixed in the harness**
+
+- **Running a `node:test` file directly (`node test/x.test.js`) now counts as a
+  test run.** Under the sandbox, two of five `sandbox-runner` agents verified
+  their fix that way (in-process, `ℹ pass 1`, exit 0) and were wrongly scored as
+  unverified. Re-scored with the fix, the five kept sessions pass 5/5.
+
+**Verified**
+
+- **Full harness, `--repeat 3`:** every one of the 20 scenarios passed 3/3
+  (60/60). Run under a clean Windows PATH, as Desktop sees it.
+- **A/B on the new scenarios**, rc.2 versus rc.3:
+
+  | Scenario | rc.2 | rc.3 |
+  |---|---|---|
+  | `bundled-script` (auto mode) | 0/3 | 3/3 |
+  | `bundled-script-sandbox` | 1/3 | 3/3 |
+  | `sandbox-runner` | 3/3 | 3/3 |
+
+  Under rc.2, every auto-mode run needed a PATH workaround, and sandboxed runs
+  made up to 4 failed bash attempts. Under rc.3, sandboxed runs fall back to
+  PowerShell after one.
+- **Checks:** `npm run verify` 136/136; `npm run compat` composes on DSH
+  0.2.0-rc.2.
+- **The harness's inherited PATH can hide bugs.** An early `bundled-script` run
+  started from Git Bash passed under rc.2, because Git Bash's PATH already holds
+  `/usr/bin`. Run the harness from a plain Windows shell.
+
 ## 1.0.0-rc.2 — 2026-10-01
 
 **Fixed in `dsh-tools.md`** (found by the splitpot field test)
