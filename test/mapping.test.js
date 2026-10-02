@@ -41,3 +41,13 @@ test('concurrent dispatch excludes implementers writing the same checkout', () =
   // checkout while one of them restored files with `git checkout --`.
   assert.match(mapping, /one\s+implementer\s+at\s+a\s+time/i);
 });
+
+test('spawn EPERM from a test runner: run it in-process before asking for full access', () => {
+  // Default-mode desktop field test: the agent named the cause of `spawn EPERM`,
+  // used --test-isolation=none for one file, then asked for danger-full-access
+  // for every full-suite run instead.
+  assert.match(mapping, /spawn EPERM/);
+  assert.match(mapping, /--test-isolation=none/);
+  assert.match(mapping, /--experimental-test-isolation=none/);
+  assert.match(mapping, /before asking for (full|wider) access/i);
+});

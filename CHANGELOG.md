@@ -3,6 +3,39 @@
 This project follows [Semantic Versioning](https://semver.org/). The upstream
 Superpowers version each release vendors is listed under it.
 
+## 1.0.0-rc.4 — 2026-10-02
+
+Upstream: obra/superpowers v6.4.2 (unchanged).
+
+**Fixed in `dsh-tools.md`** (found by splitpot field test #2, pinned by
+`test/mapping.test.js`)
+
+- **New: `spawn EPERM` from a test runner.** The first field-test phase run in
+  the desktop app's default permission mode showed the gap. Inside the sandbox,
+  `node --test` (default isolation) cannot pipe to its child processes, so it
+  fails with `spawn EPERM`. The agent named the cause correctly and ran one file
+  with `--test-isolation=none`. For every full-suite run, though, it asked for
+  `danger-full-access`. The mapping now says to run the suite in-process before
+  asking for full access (`--test-isolation=none`, or
+  `--experimental-test-isolation=none` on Node 22, or a test file under plain
+  `node`), and to leave the project's test script alone unless the human
+  agrees.
+
+**Verified**
+
+- `npm run verify`: 137/137, and `npm run compat` passes against DSH
+  0.2.0-rc.2.
+- Harness, 3 runs each: `bootstrap` 3/3 and `sandbox-runner` 3/3. In every
+  `sandbox-runner` run the agent hit `spawn EPERM` and reached green with
+  `--test-isolation=none`. Headless DSH has no approval channel, so the
+  escalation this fix targets can only be observed in the desktop app.
+- `wrap-up-own` 2/3, so it got a root cause before release. In an A/B with
+  6 runs per version, rc.3 scored 4/6 and rc.4 scored 3/6 (rc.4 5/9 in all).
+  Every failure is the same: after "wrap it up" the agent restates the earlier
+  test result instead of re-running the tests. That is the model behaviour the
+  rc.1 A/B measured (4/6 versus 8/12), and it predates this change. rc.3's 3/3
+  at release was a lucky draw, not a fix.
+
 ## 1.0.0-rc.3 — 2026-10-02
 
 Upstream: obra/superpowers v6.4.2 (unchanged).

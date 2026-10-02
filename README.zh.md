@@ -35,11 +35,11 @@
 在 DSH Desktop 的 **插件（Plugins）** 页面选择安装，输入：
 
 ```
-github:blugart-dev/dsh-superpowers#v1.0.0-rc.3
+github:blugart-dev/dsh-superpowers#v1.0.0-rc.4
 ```
 
 也可以在 Creator 模式下让智能体执行：
-`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.3" }`。
+`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.4" }`。
 
 **安装或更新后请重启 DSH**：替换已安装的包需要加载新的模块代。
 

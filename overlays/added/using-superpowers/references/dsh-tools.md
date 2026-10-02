@@ -86,6 +86,12 @@ and say so, or ask your human partner to run it outside the sandbox.
   named in the result. Read that file when your claim depends on all of it.
 - `[sandbox: file access denied ...]` is a policy boundary, not a bug in the code.
   Report it and ask; never work around it.
+- A test runner that starts child processes fails inside the sandbox with
+  `spawn EPERM`, because the sandbox blocks their pipes. The code is not at
+  fault. Run the suite in-process before asking for full access:
+  `node --test --test-isolation=none <files>` (Node 22:
+  `--experimental-test-isolation=none`), or run a test file with plain `node`.
+  Keep the project's test script unchanged unless your human partner agrees.
 - Shell network access may fail while `web_fetch` works.
 
 ## Skills on DSH
