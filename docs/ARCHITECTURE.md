@@ -109,9 +109,8 @@ mapping and a bootstrap, and "never reaches into `skills/*/SKILL.md`".
   once into a single system prompt per request, so nothing repeats or
   accumulates. It also survives compaction without re-injection.
 
-An earlier version (0.1–0.3) instead patched 13 skill bodies with "DeepSeek
-Harness notes". The full harness was re-run after the switch; see CHANGELOG
-1.0.0-rc.1.
+Earlier, unreleased versions instead patched 13 skill bodies with "DeepSeek
+Harness notes". The full harness was re-run after the switch to verbatim skills.
 
 ## Why the skills are generated
 

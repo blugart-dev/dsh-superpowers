@@ -52,7 +52,7 @@ github:blugart-dev/dsh-superpowers
 ```
 
 To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v1.0.0-rc.4`.
+`github:blugart-dev/dsh-superpowers#v1.0.0`.
 
 You can also ask an agent in Creator mode:
 `plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
@@ -151,9 +151,11 @@ section is empty in delegated sessions (`delegationDepth > 0`). Set
 - **Model per subagent.** Upstream's subagent-driven development picks a model
   for each subagent. On DSH that needs the subagent model selection setting,
   which is off by default; otherwise every subagent runs on the session's model.
-- **Release candidate.** Each long field test has so far found something in the
-  DSH tool mapping to correct (see [CHANGELOG.md](CHANGELOG.md)). Expect more
-  fixes before 1.0.
+- **The mapping is still young.** So far, every long field test has found
+  something in the DSH tool mapping to correct. Expect fixes in patch releases.
+- **Wrap-up verification.** In about a third of wrap-up turns the model restates
+  an earlier test result instead of re-running the tests, even though
+  `verification-before-completion` forbids it (see [CHANGELOG.md](CHANGELOG.md)).
 - **The gate is opt-in** and cannot see writes made through the shell.
 
 ## Uninstall

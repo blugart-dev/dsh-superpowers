@@ -12,7 +12,7 @@ for the procedure.
 | Bootstrap is in the system prompt, once | `inspect-session`: `present once` |
 | Skills are served from the package | the `Base directory` points into the installed package |
 | An armed gate denies, and the escape hatch recovers | `write` denied, `superpowers-workflow` loaded, retry allowed |
-| Skill routing for build, feature, bug, plan and done prompts, without over-triggering | `npm run eval:harness`: 3/3 per scenario (see CHANGELOG 0.2.0) |
+| Skill routing for build, feature, bug, plan and done prompts, without over-triggering | `npm run eval:harness`: 3/3 per scenario (see CHANGELOG) |
 | Subagents get no bootstrap | `subagent` scenario: parent 1x, child 0x; also confirmed in DSH Desktop |
 | Gate on resume (state rebuilt from the log) | `gate-resume` 3/3 |
 | Gate in forks | `gate-fork` 3/3, always "denied, then recovered" (forks do not inherit the current turn) |

@@ -35,11 +35,11 @@
 在 DSH Desktop 的 **插件（Plugins）** 页面选择安装，输入：
 
 ```
-github:blugart-dev/dsh-superpowers#v1.0.0-rc.4
+github:blugart-dev/dsh-superpowers#v1.0.0
 ```
 
 也可以在 Creator 模式下让智能体执行：
-`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0-rc.4" }`。
+`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers#v1.0.0" }`。
 
 **安装或更新后请重启 DSH**：替换已安装的包需要加载新的模块代。
 
@@ -77,7 +77,8 @@ plugin_manager { action: set_plugin, target: dsh-superpowers-bootstrap, enabled:
 - **模型**：只用 DeepSeek 的模型测试过，主要是 `deepseek-flash`。
 - **没有效果数据**：测试检查的是方法论是否生效（写代码前加载正确的技能、先写测试、验证是新鲜的），并不衡量项目是否因此做得更好，也不声称任何此类数字。
 - **子智能体的模型**：上游的子智能体驱动开发会为每个子智能体选择模型。在 DSH 上这需要开启子智能体模型选择设置（默认关闭）；否则所有子智能体都使用当前会话的模型。
-- **候选版本**：到目前为止，每次长时间的实地测试都发现了 DSH 工具映射中需要修正的地方（见 [CHANGELOG.md](CHANGELOG.md)）。1.0 之前预计还会有修正。
+- **映射仍在完善中**：到目前为止，每次长时间的实地测试都发现了 DSH 工具映射中需要修正的地方。预计后续补丁版本还会有修正。
+- **收尾时的验证**：在大约三分之一的收尾回合中，模型会复述之前的测试结果，而不是重新运行测试，尽管 `verification-before-completion` 明确禁止这样做（见 [CHANGELOG.md](CHANGELOG.md)）。
 - **门禁需要手动开启**，并且看不到通过 shell 进行的写入。
 
 ## 卸载
