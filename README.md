@@ -48,14 +48,17 @@ says to never edit skill bodies to fit a harness, and this port follows it:
 From the DSH Desktop **Plugins** page, choose **Install**, then enter:
 
 ```
-github:blugart-dev/dsh-superpowers
+@blugart-dev/dsh-superpowers
 ```
 
-To pin a release instead of tracking `main`, use
-`github:blugart-dev/dsh-superpowers#v1.0.0`.
+This installs the latest release from [npm](https://www.npmjs.com/package/@blugart-dev/dsh-superpowers),
+and DSH's plugin manager checks compatibility before downloading anything.
+To install straight from GitHub instead, use
+`github:blugart-dev/dsh-superpowers#v1.0.0` (a release tag) or
+`github:blugart-dev/dsh-superpowers` (tracks `main`).
 
 You can also ask an agent in Creator mode:
-`plugin_manager { action: install_bundle, spec: "github:blugart-dev/dsh-superpowers" }`.
+`plugin_manager { action: install_bundle, spec: "@blugart-dev/dsh-superpowers" }`.
 
 **Restart DSH after installing or updating.** A replaced package needs a fresh
 module generation.

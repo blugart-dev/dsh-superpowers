@@ -32,17 +32,22 @@ version's `CHANGELOG.md` section. Users install a tag with
    ```
 
    Add `--prerelease` for `-rc.N` versions.
-8. **Upgrade a real profile and restart DSH:**
-   `dsh plugin --profile <p> add github:blugart-dev/dsh-superpowers#vX.Y.Z`.
+8. **Publish to npm** from the tagged commit, with a clean tree:
+
+   ```
+   npm publish --dry-run   # check the file list and version
+   npm publish --otp=<code>
+   ```
+
+   The `blugart-dev` npm account owns the `@blugart-dev` scope and requires
+   2FA for writes, so the maintainer runs this step. A version number can
+   never be reused, and unpublishing is only allowed for 72 hours, so check
+   the dry run first. Use `--tag next` for `-rc.N` versions, so that `latest`
+   stays on a stable release. A new package can take a few minutes to appear
+   on the registry.
+9. **Upgrade a real profile and restart DSH:**
+   `dsh plugin --profile <p> add @blugart-dev/dsh-superpowers@X.Y.Z`.
    Confirm with `npm run inspect-session` in a fresh session.
-
-## npm (optional, not yet used)
-
-The package is ready for npm (`publishConfig.access: public`; `npm publish
---dry-run` packs 92 files). Publishing needs an npm account or organisation
-that owns the `@blugart-dev` scope. Once published, users can install it by
-name, `@blugart-dev/dsh-superpowers`, and DSH's plugin manager checks peer
-compatibility before downloading anything.
 
 ## Upstream releases
 
